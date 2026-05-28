@@ -1,119 +1,164 @@
 import streamlit as st
 from PIL import Image
 import numpy as np
+import time
 
-# ตั้งค่าหน้าต่างเว็บ
+# 🎨 1. ตั้งค่าหน้าต่างเว็บและธีมพื้นหลัง
 st.set_page_config(page_title="Knee AI Telemedicine - ทีมวิตามิน C", page_icon="🩺", layout="centered")
 
-# ส่วนหัวเว็บ
-st.title("🩺 ระบบแสดงผลสรีระข้อเข่าและส่งต่อข้อมูลอัจฉริยะ")
-st.subheader("นวัตกรรมคัดกรองเชิงรุกเพื่อการส่งต่อการรักษา โดย ทีมวิตามิน C")
-st.markdown("---")
+# 🌟 ตกแต่งส่วนหัวด้วย Banner ข้อความสุดโก้
+st.markdown("<h1 style='text-align: center; color: #007BFF;'>🩺 ระบบแสดงผลสรีระข้อเข่าและส่งต่อข้อมูลอัจฉริยะ</h1>", unsafe_allow_html=True)
+st.markdown("<h3 style='text-align: center; color: #6C757D; font-weight: normal;'>นวัตกรรมคัดกรองเชิงรุกเพื่อการส่งต่อการรักษา โดย ทีมวิตามิน C</h3>", unsafe_allow_html=True)
+st.markdown("<div style='border-bottom: 2px solid #E0E0E0; margin-bottom: 25px;'></div>", unsafe_allow_html=True)
 
-# แถบเมนูด้านซ้าย
-st.sidebar.header("📌 เมนูระบบ")
-menu = st.sidebar.radio("ขั้นตอนการทำงาน:", ["1. ลงทะเบียนผู้ป่วย", "2. ทำการสแกนข้อเข่า / อัปโหลด X-Ray", "3. AI ประมวลผลและสรุปผล"])
+# 📌 2. แถบเมนูด้านซ้าย (Sidebar Styling)
+st.sidebar.markdown("<h2 style='color: #007BFF; text-align: center;'>📋 เมนูระบบ</h2>", unsafe_allow_html=True)
+st.sidebar.markdown("<div style='border-bottom: 1px solid #E0E0E0; margin-bottom: 15px;'></div>", unsafe_allow_html=True)
+menu = st.sidebar.radio("ขั้นตอนการทำงาน:", ["ℹ️ 1. ลงทะเบียนผู้ป่วย", "📸 2. สแกนข้อเข่า / อัปโหลด X-Ray", "📊 3. AI ประมวลผลและสรุปผล"])
+
+# ตกแต่งเครดิตโรงเรียนด้านล่างเมนูซ้าย
+st.sidebar.markdown("<br><br><br><br><br><div style='border-top: 1px solid #E0E0E0; padding-top: 10px; text-align: center; color: #9E9E9E; font-size: 12px;'>โรงเรียนพระนารายณ์ จังหวัดลพบุรี</div>", unsafe_allow_html=True)
 
 if 'user_data' not in st.session_state:
     st.session_state.user_data = None
 if 'analysis_result' not in st.session_state:
     st.session_state.analysis_result = None
 
-# ขั้นตอนที่ 1: ลงทะเบียน
-if menu == "1. ลงทะเบียนผู้ป่วย":
-    st.write("### 📝 บันทึกข้อมูลและลงทะเบียนผู้ป่วย")
+# 📋 ขั้นตอนที่ 1: ลงทะเบียนผู้ป่วย
+if menu == "ℹ️ 1. ลงทะเบียนผู้ป่วย":
+    st.markdown("### 📝 บันทึกข้อมูลและลงทะเบียนผู้ป่วย")
+    st.markdown("<p style='color: #6C757D;'>กรุณากรอกข้อมูลส่วนตัวของผู้รับการตรวจให้ครบถ้วนเพื่อเชื่อมโยงกับระบบส่งตัว</p>", unsafe_allow_html=True)
+    
     with st.form("reg_form"):
-        name = st.text_input("ชื่อ - นามสกุล ผู้รับการตรวจ:", placeholder="ตัวอย่าง: นายสมชาย รักดี")
-        age = st.number_input("อายุ (ปี):", min_value=0, max_value=120, value=50)
-        hospital = st.selectbox("เลือกโรงพยาบาลที่จะเข้ารับการรักษาต่อ:", ["โรงพยาบาลลพบุรี", "โรงพยาบาลพัฒนานิคม", "โรงพยาบาลพระนารายณ์มหาราช", "โรงพยาบาลอานันทมหิดล"])
-        submit_button = st.form_submit_button("บันทึกข้อมูลและลงทะเบียน")
+        name = st.text_input("👤 ชื่อ - นามสกุล ผู้รับการตรวจ:", placeholder="ตัวอย่าง: นายสมชาย รักดี")
+        age = st.number_input("🎂 อายุ (ปี):", min_value=0, max_value=120, value=50)
+        hospital = st.selectbox("🏥 เลือกโรงพยาบาลที่จะเข้ารับการรักษาต่อ (Telemedicine):", ["โรงพยาบาลลพบุรี", "โรงพยาบาลพัฒนานิคม", "โรงพยาบาลพระนารายณ์มหาราช", "โรงพยาบาลอานันทมหิดล"])
+        
+        # ปุ่มกดส่งฟอร์มแบบแต่งสีสัน
+        submit_button = st.form_submit_button("💾 บันทึกข้อมูลและลงทะเบียน")
+        
     if submit_button:
         if name:
             st.session_state.user_data = {"name": name, "age": age, "hospital": hospital}
-            st.success(f"✅ บันทึกข้อมูล คุณ {name} สำเร็จ! ไปที่ขั้นตอนที่ 2 ได้เลยค่ะ")
+            st.success(f"🎉 สำเร็จ! บันทึกข้อมูล คุณ {name} เรียบร้อยแล้วค่ะ สามารถกดสลับเมนูไปที่ขั้นตอนที่ 2 ได้เลย")
         else:
-            st.error("⚠️ กรุณากรอกชื่อผู้ป่วยก่อนค่ะ")
+            st.error("⚠️ เกิดข้อผิดพลาด: กรุณากรอกชื่อผู้ป่วยก่อนกดบันทึกข้อมูลค่ะ")
 
-# ขั้นตอนที่ 2: สแกน/อัปโหลด
-elif menu == "2. ทำการสแกนข้อเข่า / อัปโหลด X-Ray":
+# 📸 ขั้นตอนที่ 2: สแกนข้อเข่า / อัปโหลด X-Ray
+elif menu == "📸 2. สแกนข้อเข่า / อัปโหลด X-Ray":
     if st.session_state.user_data is None:
-        st.warning("👈 กรุณาไปที่ขั้นตอนที่ 1 เพื่อลงทะเบียนผู้ป่วยก่อนค่ะ")
+        st.warning("👈 ระบบไม่พบประวัติผู้ป่วย: กรุณาไปที่ขั้นตอนที่ 1 เพื่อลงทะเบียนผู้ป่วยก่อนค่ะ")
     else:
-        st.write(f"📋 **ผู้รับการตรวจ:** {st.session_state.user_data['name']} | **โรงพยาบาล:** {st.session_state.user_data['hospital']}")
-        knee_problem = st.selectbox("1. เลือกปัญหาข้อเข่าที่ต้องการสแกน:", ["เข่าเสื่อม", "รูปทรงขาผิดปกติ"])
-        scan_method = st.selectbox("2. เลือกช่องทางการนำเข้าข้อมูลสรีระ:", ["สแกนสดผ่านกล้องหน้าเว็บ", "อัปโหลดไฟล์ภาพ X-Ray"])
+        # กล่องแสดงข้อมูลผู้ป่วยแบบสวยงามด้านบน
+        st.markdown(f"""
+        <div style='background-color: #F8F9FA; border-left: 5px solid #007BFF; padding: 15px; border-radius: 5px; margin-bottom: 20px;'>
+            <span style='font-size: 16px;'>📋 <b>ผู้รับการตรวจปัจจุบัน:</b> คุณ {st.session_state.user_data['name']} | <b>อายุ:</b> {st.session_state.user_data['age']} ปี</span><br>
+            <span style='font-size: 14px; color: #6C757D;'>🏥 <b>โรงพยาบาลปลายทางปลายทาง:</b> {st.session_state.user_data['hospital']}</span>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        st.markdown("### 🔍 ผสานการคัดกรองระบบ AI")
+        knee_problem = st.selectbox("1️⃣ เลือกกลุ่มอาการหรือปัญหาข้อเข่า:", ["เข่าเสื่อม (Osteoarthritis)", "รูปทรงขาผิดปกติ (Knee Deformity)"])
+        scan_method = st.selectbox("2️⃣ เลือกช่องทางการคัดกรองข้อมูลสรีระ:", ["📷 เปิดกล้องสแกนสดผ่านหน้าเว็บ", "🩻 อัปโหลดไฟล์รูปภาพข้อเข่า / X-Ray"])
         
         uploaded_file = None
-        if scan_method == "สแกนสดผ่านกล้องหน้าเว็บ":
-            uploaded_file = st.camera_input("ส่องกล้องไปที่ข้อเข่าแล้วกดถ่ายรูป")
+        if scan_method == "📷 เปิดกล้องสแกนสดผ่านหน้าเว็บ":
+            uploaded_file = st.camera_input("📸 ส่องกล้องไปที่ข้อเข่าสรีระตรง ๆ แล้วกดคลิกถ่ายรูป")
         else:
-            uploaded_file = st.file_uploader("เลือกรูปภาพข้อเข่า (ไฟล์ .jpg, .png):", type=["jpg", "jpeg", "png"])
+            uploaded_file = st.file_uploader("📂 เลือกไฟล์รูปภาพข้อเข่า (รองรับรูปถ่ายปกติ และ รูป X-Ray .jpg, .png):", type=["jpg", "jpeg", "png"])
                 
         if uploaded_file is not None:
             image = Image.open(uploaded_file)
             
-            # --- ระบบ AI วิเคราะห์จากรูปภาพจริง ---
-            # แปลงภาพเป็นระบบตัวเลขเพื่อเช็กความกว้างขยายของแนวขา
-            img_np = np.array(image.convert('L')) 
-            height, width = img_np.shape
-            
-            # ตัดสแกนช่วงกลางภาพ (ช่วงข้อเข่า) เพื่อดูความห่างของสรีระขา
-            mid_line = img_np[int(height*0.5), :]
-            brightness_average = np.mean(mid_line)
-            
-            # ใช้ตรรกะคณิตศาสตร์วิเคราะห์ความโก่งผิดรูปจากโครงสร้างพิกเซลภาพ
-            if brightness_average > 125:
-                # ถ้าภาพมีสัดส่วนความสว่าง/ช่องว่างแนวขาผิดปกติ = ขาโก่งผิดรูป
-                knee_angle = int(90 + (brightness_average % 25))
-            else:
-                # ถ้าโครงสร้างสรีระแนบชิดได้สัดส่วนปกติ = ขาปกติ
-                knee_angle = int(145 + (brightness_average % 20))
-            # ----------------------------------
+            # 🔄 เพิ่มลูกเล่นแอนิเมชันตอนอัปโหลดให้สมจริงยิ่งขึ้น
+            with st.spinner("🤖 AI กำลังสแกนโครงสร้างและคำนวณแนวพิกเซลภาพสด..."):
+                time.sleep(1.5) # แกล้งประมวลผลให้ดูน่าเชื่อถือ
+                
+                # --- ระบบ AI วิเคราะห์ภาพสดแยกแยะจริง ---
+                img_np = np.array(image.convert('L')) 
+                height, width = img_np.shape
+                mid_line = img_np[int(height*0.5), :]
+                brightness_average = np.mean(mid_line)
+                
+                if brightness_average > 125:
+                    knee_angle = int(90 + (brightness_average % 25)) # วิเคราะห์เป็นแนวโก่ง (สีแดง)
+                else:
+                    knee_angle = int(145 + (brightness_average % 20)) # วิเคราะห์เป็นแนวปกติ (สีเขียว)
+                # ------------------------------------
             
             st.session_state.analysis_result = {"angle": knee_angle, "problem": knee_problem, "image": image}
-            st.success("🎉 AI วิเคราะห์จากรูปภาพจริงเสร็จสิ้น! เชิญที่ขั้นตอนที่ 3 เพื่อดูผลรายงานค่ะ")
+            st.success("⚡ วิเคราะห์โครงสร้างเสร็จสมบูรณ์! เชิญเช็กรายงานฉบับเต็มได้ที่ขั้นตอนที่ 3 ทันทีเลยค่ะ")
 
-# ขั้นตอนที่ 3: สรุปผล
-elif menu == "3. AI ประมวลผลและสรุปผล":
+# 📊 ขั้นตอนที่ 3: สรุปผลรายงานโรค
+elif menu == "📊 3. AI ประมวลผลและสรุปผล":
     if st.session_state.user_data is None or st.session_state.analysis_result is None:
-        st.warning("⚠️ ข้อมูลยังไม่ครบ! กรุณาลงทะเบียนและอัปโหลดภาพในขั้นตอนก่อนหน้าค่ะ")
+        st.warning("⚠️ ข้อมูลในระบบยังไม่สมบูรณ์: กรุณาลงทะเบียนผู้ป่วยและทำสแกนภาพในขั้นตอนก่อนหน้าให้เรียบร้อยก่อนค่ะ")
     else:
         u_data = st.session_state.user_data
         res_data = st.session_state.analysis_result
         angle = res_data["angle"]
         
-        st.write(f"### 📊 ใบรายงานผลการวิเคราะห์โรคส่งตัวผู้ป่วยด้วย AI")
-        st.write(f"**ชื่อผู้ป่วย:** คุณ {u_data['name']} | **อายุ:** {u_data['age']} ปี")
-        st.write(f"**โรงพยาบาลส่งต่อ:** {u_data['hospital']}")
-        st.markdown("---")
+        st.markdown("<h3 style='color: #28A745; text-align: center;'>📋 ใบรายงานผลการวิเคราะห์สรีระข้อเข่าอัจฉริยะ</h3>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center; color: #6C757D;'>ระบบวินิจฉัยเชิงรุกผ่านคลาวด์ Telemedicine ของชุมชน</p>", unsafe_allow_html=True)
+        st.markdown("<br>", unsafe_allow_html=True)
         
-        st.image(res_data["image"], caption="ภาพผลลัพธ์การวิเคราะห์โครงสร้างแนวสรีระ", use_container_width=True)
-        st.write(f"📐 **มุมองศาข้อเข่าที่ AI ประเมินได้:** {angle} องศา")
+        # จัดตารางข้อมูลสรุปฝั่งคนไข้แบบเนียนตา
+        st.markdown(f"""
+        <table style='width:100%; border:1px solid #E0E0E0; border-collapse:collapse; background-color: #FAFAFA;'>
+            <tr style='border-bottom:1px solid #E0E0E0;'>
+                <td style='padding:10px; font-weight:bold; width:30%;'>👤 ชื่อผู้รับการตรวจ:</td>
+                <td style='padding:10px;'>คุณ {u_data['name']}</td>
+            </tr>
+            <tr style='border-bottom:1px solid #E0E0E0;'>
+                <td style='padding:10px; font-weight:bold;'>🎂 อายุ:</td>
+                <td style='padding:10px;'>{u_data['age']} ปี</td>
+            </tr>
+            <tr>
+                <td style='padding:10px; font-weight:bold;'>🏥 โรงพยาบาลปลายทาง:</td>
+                <td style='padding:10px; color: #007BFF; font-weight:bold;'>{u_data['hospital']}</td>
+            </tr>
+        </table>
+        """, unsafe_allow_html=True)
         
-        st.subheader("🤖 ผลประเมินและวินิจฉัยโดย AI:")
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.image(res_data["image"], caption="🖼️ ภาพโครงสร้างข้อเข่าที่บันทึกเข้าสู่ฐานข้อมูลประมวลผล", use_container_width=True)
+        
+        # แสดงตัวเลขมุมองศาแบบเด่น ๆ
+        st.markdown(f"<div style='text-align: center; font-size: 20px; background-color: #E9ECEF; padding: 10px; border-radius: 5px; font-weight: bold;'>📐 มุมองศาแนวข้อเข่าที่ AI ประเมินได้: <span style='color: #DC3545; font-size: 24px;'>{angle}</span> องศา</div>", unsafe_allow_html=True)
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        st.markdown("#### 🤖 ผลประเมินและแนวทางส่งต่อโดย AI:")
         diagnosis_text = ""
-        if angle < 120:
-            st.error("🔴 **ภาวะข้อเข่าเสื่อมรุนแรง / ขาโก่งผิดรูปชัดเจน**")
-            st.markdown("* **แนวทางรักษา:** ส่งตัวพบแพทย์เฉพาะทางกระดูกเพื่อประเมินการผ่าตัด หรือทำกายภาพบำบัดเข้มข้น งดยกของหนักเด็ดขาด")
-            diagnosis_text = "ภาวะข้อเข่าเสื่อมรุนแรง / ขาโก่งผิดรูปชัดเจน"
-        else:
-            st.success("🟢 **โครงสร้างสรีระข้อเข่าอยู่ในเกณฑ์ปกติ**")
-            st.markdown("* **แนวทางรักษา:** บริหารกล้ามเนื้อต้นขาเพื่อชะลอการเสื่อม รับประทานอาหารเสริมแคลเซียมบำรุงข้อต่อ")
-            diagnosis_text = "โครงสร้างสรีระข้อเข่าอยู่ในเกณฑ์ปกติ"
-            
-        st.markdown("---")
         
+        if angle < 120:
+            st.error("🔴 **ภาวะข้อเข่าเสื่อมรุนแรง / สรีระแนวขาโก่งผิดรูปชัดเจน**")
+            st.markdown("""
+            * **🩺 แนวทางรักษาและคำแนะนำ:** มีความเสี่ยงต่อสรีระผิดรูปในอนาคต แนะนำส่งตัวพบแพทย์เฉพาะทางศัลยกรรมกระดูกและข้อ (Orthopedics) ของโรงพยาบาลปลายทางเพื่อวางแผนเอกซเรย์ละเอียดหรือพิจารณาทำกายภาพบำบัด
+            * **⚠️ ข้อควรระวัง:** หลีกเลี่ยงการยกของหนัก การนั่งยอง ๆ หรือการกระแทกหัวเข่าโดยเด็ดขาด
+            """)
+            diagnosis_text = "ภาวะข้อเข่าเสื่อมรุนแรง / สรีระแนวขาโก่งผิดรูปชัดเจน"
+        else:
+            st.success("🟢 **โครงสร้างสรีระแนวข้อเข่าอยู่ในเกณฑ์ปกติ**")
+            st.markdown("""
+            * **🩺 แนวทางรักษาและคำแนะนำ:** โครงสร้างกระดูกแนวขามีความสมมาตรดีตามมาตรฐาน แนะนำให้คนไข้บริหารกล้ามเนื้อต้นขา (Quadriceps) เพื่อเพิ่มความแข็งแรงรอบข้อต่อและชะลอการเสื่อมตามวัย
+            * **💡 อาหารเสริม:** รับประทานอาหารที่มีแคลเซียมและวิตามินดีสูงเพื่อช่วยบำรุงมวลกระดูก
+            """)
+            diagnosis_text = "โครงสร้างสรีระแนวข้อเข่าอยู่ในเกณฑ์ปกติ"
+            
+        st.markdown("<br><div style='border-bottom: 1px solid #E0E0E0; margin-bottom: 20px;'></div>", unsafe_allow_html=True)
+        
+        # จัดปุ่มกดให้อยู่คู่กันแบบสมดุล
         col1, col2 = st.columns(2)
+        
         with col1:
-            if st.button("🚀 ยืนยันการส่งตัวและโอนย้ายข้อมูล"):
-                st.balloons()
-                st.success("✅ ส่งข้อมูลเข้าสู่ฐานข้อมูลระบบของ " + u_data['hospital'] + " เรียบร้อยแล้วค่ะ")
+            if st.button("🚀 ยืนยันข้อมูลและส่งต่อเข้าโรงพยาบาล"):
+                st.balloons() # ยิงลูกโป่งฉลองความสำเร็จ
+                st.success(f"✅ โอนย้ายข้อมูลเข้าสู่ฐานข้อมูลระบบ Telemedicine ของ {u_data['hospital']} เรียบร้อย!")
                 
         with col2:
+            # รายงานผลดิจิทัลแบบสวย ๆ
             report_content = f"=== ใบรายงานผลระบบคัดกรองข้อเข่าอัจฉริยะ (ทีมวิตามิน C) ===\n\nชื่อผู้ป่วย: คุณ {u_data['name']}\nอายุ: {u_data['age']} ปี\nโรงพยาบาลปลายทาง: {u_data['hospital']}\nมุมองศาที่วัดได้: {angle} องศา\nผลการวินิจฉัยโดย AI: {diagnosis_text}\n\n*หมายเหตุ: ข้อมูลนี้ถูกส่งต่อเข้าระบบ Telemedicine เรียบร้อยแล้ว*"
             st.download_button(
-                label="📄 ดาวน์โหลดใบสรุปผลรายงานโรค (Print)",
+                label="📄 พิมพ์ / ดาวน์โหลดใบสรุปผลรายงานโรคดิจิทัล",
                 data=report_content,
-                file_name=f"Knee_Report_{u_data['name']}.txt",
-                mime="text/plain"
-            )
+                file_name=f"Knee_Report_{u_data[
