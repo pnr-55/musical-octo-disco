@@ -87,7 +87,7 @@ elif menu == "📸 2. สแกนข้อเข่า / อัปโหลด 
                 # ------------------------------------
             
             st.session_state.analysis_result = {"angle": knee_angle, "problem": knee_problem, "image": image}
-            st.success("⚡ วิเคราะห์โครงสร้างเสร็จสมบูรณ์! เชิญเช็กรายงานฉบับเต็มได้ที่ขั้นตอนที่ 3 ทันทีเลยค่ะ")
+            st.success("⚡ วิเคราะห์โครงสร้างเสร็จสมบูรณ์! เช็กรายงานฉบับเต็มได้ที่ขั้นตอนที่ 3 ทันทีเลยค่ะ")
 
 # 📊 ขั้นตอนที่ 3: สรุปผลรายงานโรค
 elif menu == "📊 3. AI ประมวลผลและสรุปผล":
@@ -161,4 +161,4 @@ elif menu == "📊 3. AI ประมวลผลและสรุปผล":
             st.download_button(
                 label="📄 พิมพ์ / ดาวน์โหลดใบสรุปผลรายงานโรคดิจิทัล",
                 data=report_content,
-                file_name=f"Knee_Report_{u_data[
+                file_name=f"Knee_Report_{u_data['nam
