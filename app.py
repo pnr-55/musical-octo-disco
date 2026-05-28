@@ -106,5 +106,3 @@ elif menu == "3. AI ประมวลผลและสรุปผล":
                 file_name=f"Knee_Report_{u_data['name']}.txt",
                 mime="text/plain"
             )
-
-
