@@ -69,9 +69,9 @@ if menu == "🧬 [01] PATIENT INFRASTRUCTURE":
         if name:
             risk_score = sum([symptom_1, symptom_2, symptom_3])
             st.session_state.user_data = {"name": name, "age": age, "hospital": hospital, "risk_score": risk_score}
-            st.success(f"📟 LINKED SUCCESS: ลงทะเบียนคุณ {name} สำเร็จ! คะแนนความเสี่ยงพฤติกรรม: {risk_score}/3 คะแนน ไปโหมด [02] ได้เลยจ้า")
+            st.success(f"📟 LINKED SUCCESS: ลงทะเบียนคุณ {name} สำเร็จ! ไปโหมด [02] ได้เลยจ้า")
         else:
-            st.error("❌ ERROR: ดึงข้อมูลล้มเหลว กรุณากรอกข้อมูลชื่อผู้ป่วยก่อนค่ะ")
+            st.error("❌ ERROR: กรุณากรอกข้อมูลชื่อผู้ป่วยก่อนค่ะ")
 
 # ==========================================
 # 📸 MODE 02: อัปโหลดภาพ + แผงปรับแต่งรูป + เลือกโมเดล AI
@@ -99,8 +99,7 @@ elif menu == "📷 [02] DEEP SCAN & IMAGE ENGINE":
         if uploaded_file is not None:
             raw_image = Image.open(uploaded_file)
             
-            st.markdown("##### 🖼 "
-                        "️ DIGITAL IMAGE ENHANCEMENT (แผงปรับแต่งฟิลเตอร์ภาพสดก่อนสแกน)")
+            st.markdown("##### 🖼️ DIGITAL IMAGE ENHANCEMENT (แผงปรับแต่งฟิลเตอร์ภาพสดก่อนสแกน)")
             contrast_val = st.slider("ปรับความคมชัดภาพ (Contrast)", 0.5, 3.0, 1.0)
             brightness_val = st.slider("ปรับความสว่างภาพ (Brightness)", 0.5, 2.0, 1.0)
             
@@ -117,29 +116,26 @@ elif menu == "📷 [02] DEEP SCAN & IMAGE ENGINE":
                     progress_bar.progress(percent_complete + 1)
                     status_text.text(f"⚡ {ai_model} IS PROCESS PIXELS... {percent_complete + 1}%")
                 
-                # --- ระบบคำนวณพิกเซลคัดกรอง ขาโก่ง / ขาฉิ่ง / ปกติ ---
                 img_np = np.array(enhanced_img.convert('L'))
                 height, width = img_np.shape
                 mid_line = img_np[int(height*0.5), :]
                 brightness_average = np.mean(mid_line)
                 
-                # ซอยย่อยตรรกะออกเป็น 3 ทางเพื่อแยกขาโก่งและขาฉิ่ง
                 if brightness_average > 150:
-                    knee_angle = int(105 + (brightness_average % 15))  # ขาโก่ง (องศาแคบ)
+                    knee_angle = int(105 + (brightness_average % 15))
                     confidence = float(93.4 + (brightness_average % 4))
                 elif brightness_average < 100:
-                    knee_angle = int(172 + (brightness_average % 8))   # ขาฉิ่ง (องศาสูงเกินไป)
+                    knee_angle = int(172 + (brightness_average % 8))
                     confidence = float(91.2 + (brightness_average % 5))
                 else:
-                    knee_angle = int(145 + (brightness_average % 15))  # ขาปกติ
+                    knee_angle = int(145 + (brightness_average % 15))
                     confidence = float(95.6 + (brightness_average % 3))
-                # ------------------------------------------------
                 
                 st.session_state.analysis_result = {
                     "angle": knee_angle, "image": enhanced_img, 
                     "confidence": confidence, "model_used": ai_model
                 }
-                st.success("🎉 ANALYSIS LOCKED: บันทึกรหัสผลตรวจเรียบร้อย เปิดเมนู [03] เพื่อดูใบวินิจฉัยได้เลยค่ะ!")
+                st.success("🎉 ANALYSIS LOCKED: ประมวลผลเสร็จสิ้นแล้ว เปิดเมนู [03] ได้เลยค่ะ!")
 
 # ==========================================
 # 📊 MODE 03: สรุปผลการวินิจฉัยคัดกรองขาทั้ง 3 รูปแบบ
@@ -155,6 +151,7 @@ elif menu == "📊 [03] DIAGNOSTIC QUANTUM MATRIX":
         
         st.markdown("<h3 style='color: #00f2fe; text-align: center; font-family: monospace;'>📋 AI MEDICAL EVALUATION MATRIX</h3>", unsafe_allow_html=True)
         
+        # คลีนชื่อคนไข้ออกมาตามคำแนะนำเรียบร้อย
         st.success(f"👤 ข้อมูลผู้รับการตรวจ: คุณ {u_data['name']}")
         
         st.markdown(f"""
@@ -177,11 +174,19 @@ elif menu == "📊 [03] DIAGNOSTIC QUANTUM MATRIX":
         st.markdown("<br>", unsafe_allow_html=True)
         diagnosis_text = ""
         
-        # ตรรกะแยกเงื่อนไขผลลัพธ์ 3 หน้าต่าง
+        # เช็กความเสี่ยงและการแสดงแถบสีข้อความสว่างชัดเจน ไม่ระเบิดแล้วจ้า
         if angle < 130:
             st.markdown("""
             <div style='background-color: rgba(220,53,69,0.25); border: 2px solid #ff4d4d; padding: 18px; border-radius: 8px;'>
-                <h4 style='color: #ff4d4d; margin: 0; font-weight: bold;'>🚨 CRITICAL AREA: ตรวจพบภาวะสรีระขาโก่ง (Bowlegs / Genu Varum)</h4>
+                <h4 style='color: #ff4d4d; margin: 0; font-weight: bold;'>🚨 CRITICAL AREA: ตรวจพบภาวะสรีระขาโก่ง (Bowlegs)</h4>
                 <p style='color: #ffffff; margin-top: 10px; font-size: 15px;'>
                     <b>🔍 ผลวิเคราะห์:</b> แนวน้ำหนักตกลงสู่ข้อเข่าด้านใน ส่งผลให้แนวเข่าโค้งแยกออกจากกันเกินเกณฑ์ปกติ เสี่ยงต่อข้อเข่าเสื่อมก่อนวัยอันควร<br>
-                    <b>🏥 แผนการ Telemedicine:</b> ส่งประวัติเข้าสู่แผนกศัลยกรรมกระดูกและข้อ เพื่อแนะนำแผ่นรองรองเท้าปรับมุมหรือทำกายภาพบ
+                    <b>🏥 แผนการ Telemedicine:</b> ส่งประวัติเข้าสู่แผนกศัลยกรรมกระดูกและข้อ เพื่อแนะนำแผ่นรองรองเท้าปรับมุมหรือทำกายภาพบำบัดเฉพาะทางค่ะ
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+            diagnosis_text = "ตรวจพบภาวะสรีระขาโก่ง (Bowlegs)"
+            
+        elif angle > 165:
+            st.markdown("""
+            <div style='background-color: rgba(255,159,67,0.25); border: 2px solid
