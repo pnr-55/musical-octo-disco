@@ -146,76 +146,81 @@ elif menu == "📷 [02] DEEP SCAN & IMAGE ENGINE":
                 st.success("🎉 ANALYSIS LOCKED: บันทึกรหัสผลตรวจเรียบร้อย เปิดเมนู [03] เพื่อดูใบวินิจฉัยได้เลยค่ะ!")
 
 # ==========================================
-# 📊 MODE 03: สรุปผลการวินิจฉัยเชิงลึก
+# 📊 MODE 03: สรุปและแสดงผลรายงานแพทย์เชิงลึก
 # ==========================================
 elif menu == "📊 [03] DIAGNOSTIC QUANTUM MATRIX":
     if st.session_state.user_data is None or st.session_state.analysis_result is None:
-        st.warning("⚠️ DATA GAP DETECTED: กรุณากรอกประวัติและกดสแกนรูปภาพในโหมดก่อนหน้าก่อนค่ะ")
+        st.warning("⚠️ INCOMPLETE SYSTEM DATA: กรุณาลงทะเบียนและสแกนรูปภาพในขั้นตอนก่อนหน้าให้ครบถ้วน")
     else:
         u_data = st.session_state.user_data
         res_data = st.session_state.analysis_result
         angle = res_data["angle"]
         conf = res_data["confidence"]
-
-        st.markdown("<h3 style='color: #00f2fe; text-align: center; font-family: monospace;'>📋 AI MEDICAL EVALUATION MATRIX</h3>", unsafe_allow_html=True)
-
-        # แสดงข้อมูลผู้ป่วยและคะแนนประเมินอาการพฤติกรรมคัดกรอง
+        
+        st.markdown("<h3 style='color: #00f2fe; text-align: center; font-family: monospace;'>📋 AI CLINICAL DIAGNOSIS MATRIX</h3>", unsafe_allow_html=True)
+        
+        # ✨ จุดที่ 1: แยกส่วนชื่อคนไข้ออกมาแสดงด้วยคำสั่งมาตรฐานของ Streamlit (คลีนข้อความ ไม่ปนใน HTML)
+        st.success(f"👤 ข้อมูลผู้รับการตรวจ: คุณ {u_data['name']}")
+        
+        # กล่องแสดงข้อมูลส่วนอื่นในระบบไซไฟ
         st.markdown(f"""
         <div style='background-color: #161b22; border: 1px solid #30363d; padding: 15px; border-radius: 8px;'>
-            <p style='color: #ffffff; margin: 2px;'>👤 <b>PATIENT NAME:</b> คุณ {u_data['name']} (อายุ {u_data['age']} ปี)</p>
-            <p style='color: #ffffff; margin: 2px;'>🏥 <b>HOSPITAL NODE:</b> {u_data['hospital']}</p>
-            <p style='color: #00f2fe; margin: 2px;'>🧠 <b>AI CORE MODEL:</b> {res_data['model_used']}</p>
-            <p style='color: #ff9f43; margin: 2px;'>📊 <b>BEHAVIOR RISK SCORE:</b> {u_data['risk_score']}/3 อาการที่พบทั่วไป</p>
+            <p style='color: #ffffff; margin: 2px;'>🎂 <b>AGE:</b> {u_data['age']} ปี</p>
+            <p style='color: #ffffff; margin: 2px;'>🏥 <b>CLOUD NODE:</b> {u_data['hospital']}</p>
+            <p style='color: #00f2fe; margin: 2px;'>⚙️ <b>ALGORITHM:</b> Grayscale Brightness & Alignment Detection</p>
         </div>
         """, unsafe_allow_html=True)
-
+        
         st.markdown("<br>", unsafe_allow_html=True)
-        st.image(res_data["image"], caption="ANALYZED PICTURE", use_container_width=True)
-
+        st.image(res_data["image"], caption="ANALYZED FRAME TARGET", use_container_width=True)
+        
         col_a, col_b = st.columns(2)
         with col_a:
-            st.metric(label="📐 CALCULATED KNEE ANGLE", value=f"{angle}°")
+            st.metric(label="📐 PREDICTED ANGLE", value=f"{angle}°")
         with col_b:
-            st.metric(label="🤖 SYSTEM ACCURACY CONFIDENCE", value=f"{conf:.2f}%")
-
+            st.metric(label="🤖 AI CONFIDENCE", value=f"{conf:.2f}%")
+            
         st.markdown("<br>", unsafe_allow_html=True)
         diagnosis_text = ""
-
-        # ตัดเกณฑ์คะแนนรวมอาการและองศาภาพถ่ายร่วมกันเพื่อความล้ำ
-        if angle < 120 or u_data['risk_score'] >= 2:
+        
+        # ✨ จุดที่ 2: แก้สีตัวอักษรเป็นสีขาวประทับสว่างเด่นอ่านง่ายชัดเจน (ไม่จมหายไปกับความมืด)
+        if angle < 120:
             st.markdown("""
             <div style='background-color: rgba(220,53,69,0.25); border: 2px solid #ff4d4d; padding: 18px; border-radius: 8px;'>
-                <h4 style='color: #ff4d4d; margin: 0; font-weight: bold;'>🚨 CRITICAL AREA: พบความเสี่ยงข้อเข่าเสื่อมหรือสรีระผิดรูป</h4>
-                <p style='color: #ffffff; margin-top: 10px; font-size: 15px;'>
-                    <b>🔍 บทวิเคราะห์ภาพและพฤติกรรม:</b> ตรวจพบค่าดัชนีองศาขาแคบกว่าเกณฑ์ปกติ หรือคนไข้มีอาการขัดตึงร่วมด้วยชัดเจน<br>
-                    <b>🏥 แผนการ Telemedicine:</b> ทำการส่งประวัติเร่งด่วนไปยังผู้เชี่ยวชาญด้านกระดูก (Orthopedics) ของโรงพยาบาลปลายทางเพื่อจองคิวตรวจละเอียดต่อไปค่ะ
+                <h4 style='color: #ff4d4d; margin: 0; font-weight: bold;'>🚨 CRITICAL WARNING: พบแนวสรีระผิดรูป / ข้อเข่าเสื่อมรุนแรง</h4>
+                <p style='color: #ffffff; margin-top: 10px; font-size: 15px; line-height: 1.6;'>
+                    <b>🔍 ผลการวิเคราะห์:</b> ตรวจพบมุมองศาแนวข้อเข่าแคบกว่าเกณฑ์มาตรฐาน มีความเสี่ยงสรีระขาโก่งผิดรูปชัดเจน<br>
+                    <b>🩺 แนวทางรักษา:</b> ระบบแนะนำทำการส่งต่อผู้ป่วยเข้าสู่แผนกศัลยกรรมกระดูกและข้อไปยังโรงพยาบาลปลายทางด่วนที่สุด
                 </p>
             </div>
             """, unsafe_allow_html=True)
-            diagnosis_text = "พบความเสี่ยงภาวะข้อเข่าเสื่อม / สรีระโก่งผิดรูปชัดเจน"
+            diagnosis_text = "พบภาวะข้อเข่าเสื่อมรุนแรง สรีระผิดรูป"
         else:
             st.markdown("""
             <div style='background-color: rgba(40,167,69,0.25); border: 2px solid #2ed573; padding: 18px; border-radius: 8px;'>
-                <h4 style='color: #2ed573; margin: 0; font-weight: bold;'>🟢 NORMAL STATE: สรีระกระดูกเข่าอยู่ในเกณฑ์ปกติ</h4>
-                <p style='color: #ffffff; margin-top: 10px; font-size: 15px;'>
-                    <b>🔍 บทวิเคราะห์ภาพและพฤติกรรม:</b> สรีระแนวกระดูกขามีความสมมาตรสมบูรณ์ และไม่มีกลุ่มอาการปวดรุนแรงแทรกซ้อน<br>
-                    <b>💡 การดูแลรักษา:</b> แนะนำให้บริหารกล้ามเนื้อต้นขาเพื่อพยุงน้ำหนัก และติดตามอาการคัดกรองเชิงรุกทุก ๆ 6 เดือน
+                <h4 style='color: #2ed573; margin: 0; font-weight: bold;'>🟢 SYSTEM STABLE: สรีระแนวข้อเข่าปกติ</h4>
+                <p style='color: #ffffff; margin-top: 10px; font-size: 15px; line-height: 1.6;'>
+                    <b>🔍 ผลการวิเคราะห์:</b> โครงสร้างกระดูกแนวขามีความสมมาตรดีและทำมุมอยู่ในเกณฑ์ปกติมาตรฐานชุมชน<br>
+                    <b>🩺 แนวทางรักษา:</b> แนะนำโปรแกรมบริการสรีระและออกกำลังกายเพื่อเสริมความแข็งแรงของกล้ามเนื้อรอบต้นขาเพื่อชะลอการเสื่อมตามวัย
                 </p>
             </div>
             """, unsafe_allow_html=True)
-            diagnosis_text = "สรีระแนวข้อเข่าปกติอยู่ในเกณฑ์มาตรฐานความสมมาตร"
-
+            diagnosis_text = "สรีระแนวข้อเข่าปกติอยู่ในเกณฑ์มาตรฐาน"
+            
         st.markdown("<br>", unsafe_allow_html=True)
-
+        
         c1, c2 = st.columns(2)
         with c1:
-            if st.button("🚀 BROADCAST LINK (ส่งต่อข้อมูลข้ามเครือข่ายโรงพยาบาล)"):
+            if st.button("🚀 TRANSMIT DATA (ส่งข้อมูลเข้าเครือข่ายแพทย์)"):
                 st.balloons()
-                st.success(f"⚡ PACKET TRANSMITTED: โอนย้ายข้อมูลเข้าสู่ฐานระบบของ {u_data['hospital']} เรียบร้อย!")
+                st.success(f"⚡ DATA BROADCASTED: โอนย้ายข้อมูลสำเร็จ!")
         with c2:
-            report_content = f"=== Knee AI Advanced Cyber Report ===\nPatient: {u_data['name']}\nAge: {u_data['age']} years\nHospital Node: {u_data['hospital']}\nCalculated Angle: {angle} Degrees\nSymptom Risk: {u_data['risk_score']}/3\nAI Core Engine: {res_data['model_used']}\nAI Confidence: {conf}%\nDiagnosis: {diagnosis_text}"
-            st.download_button(label="📄 PRINT CYBER MEDICAL REPORT", data=report_content, file_name=f"Advanced_Knee_Report.txt", mime="text/plain")
+            report_content = f"=== Knee AI Telemedicine Report ===\nPatient: {u_data['name']}\nAge: {u_data['age']} years\nHospital Node: {u_data['hospital']}\nCalculated Angle: {angle} Degrees\nAI Confidence: {conf}%\nDiagnosis: {diagnosis_text}"
+            st.download_button(label="📄 GENERATE DIGITAL MEDICAL REPORT", data=report_content, file_name=f"AI_Knee_Report.txt", mime="text/plain")
 
+        # ✨ จุดที่ 3: เพิ่มแถบข้อพิจารณาด้านการแพทย์ (Medical Disclaimer) ไว้ที่ท้ายหน้าจอเพื่อความปลอดภัยและถูกต้องตามจริยธรรม
+        st.markdown("<br><div style='border-bottom: 1px dashed #6C757D; margin-bottom: 15px;'></div>", unsafe_allow_html=True)
+        st.caption("🩺 **Medical Disclaimer:** ระบบนี้เป็นเพียงแบบหุ่นจำลองระบบโทรเวชกรรม (Telemedicine Prototype) สำหรับคัดกรองเบื้องต้นเพื่อการศึกษาเชิงแนวคิดเท่านั้น ไม่สามารถนำไปใช้ทดแทนดุลยพินิจหรือการวินิจฉัยโรคโดยแพทย์ผู้เชี่ยวชาญในสถานการณ์จริงได้")
 # ==========================================
 # 📈 MODE 04: แดชบอร์ดข้อมูลทางระบาดวิทยา (หน้าใหม่ล้ำ ๆ)
 # ==========================================
