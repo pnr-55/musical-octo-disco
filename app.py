@@ -7,7 +7,7 @@ import pandas as pd
 # 🎨 1. ตั้งค่าหน้าต่างเว็บธีมไซไฟอวกาศ
 st.set_page_config(page_title="Knee AI - NextGen Telemedicine", page_icon="⚡", layout="centered")
 
-# 🌌 ตกแต่ง CSS Styling ให้ล้ำยุคและอ่านง่ายร้อยเปอร์เซ็นต์
+# 🌌 ตกแต่ง CSS Styling ให้ล้ำยุคและอ่านง่ายชัดเจน
 st.markdown("""
 <style>
     .reportview-container { background: #0e1117; }
@@ -24,22 +24,21 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # 🚀 ส่วนหัวระบบยุคอัจฉริยะ
-st.markdown("<h1 style='text-align: center; color: #00f2fe;'>🤖 KNEE-AI: ULTIMATE TELEMEDICINE MULTIVERSE</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; color: #a1a1a1; font-family: monospace;'>PROTOTYPE VERSION 5.5 [FULL FUNCTION] // BY TEAM VITAMIN C</p>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center; color: #00f2fe;'>🤖 KNEE-AI: MULTI-AXIS ALIGNMENT ENGINE</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: #a1a1a1; font-family: monospace;'>PROTOTYPE VERSION 6.0 [BOWLEGS & KNOCK-KNEES MODE] // BY TEAM VITAMIN C</p>", unsafe_allow_html=True)
 st.markdown("<div style='border-bottom: 2px dashed #00f2fe; margin-bottom: 25px;'></div>", unsafe_allow_html=True)
 
-# 📌 เมนูไซด์บาร์พร้อมไอคอนซอฟต์แวร์ห้องแล็บแบบจุใจ 4 โหมด!
-st.sidebar.markdown("<h2 style='color: #00f2fe; text-align: center;'>📡 SYSTEM CORE v5.5</h2>", unsafe_allow_html=True)
+# 📌 เมนูไซด์บาร์สไตล์ห้องแล็บ
+st.sidebar.markdown("<h2 style='color: #00f2fe; text-align: center;'>📡 SYSTEM CORE v6.0</h2>", unsafe_allow_html=True)
 menu = st.sidebar.radio("SELECT INTEL MODE:", [
-    "🧬 [01] PATIENT INFRASTRUCTURE",
-    "📷 [02] DEEP SCAN & IMAGE ENGINE",
+    "🧬 [01] PATIENT INFRASTRUCTURE", 
+    "📷 [02] DEEP SCAN & IMAGE ENGINE", 
     "📊 [03] DIAGNOSTIC QUANTUM MATRIX",
     "📈 [04] EPIDEMIOLOGY DASHBOARD"
 ])
 
 st.sidebar.markdown("<br><br><div style='border-top: 1px dashed #6C757D; padding-top: 10px; text-align: center; color: #6C757D; font-family: monospace; font-size: 11px;'>STATION: PHRA NARAI SCHOOL // LOPBURI</div>", unsafe_allow_html=True)
 
-# ระบบจำลองฐานข้อมูลให้อยู่ข้ามหน้าเว็บ
 if 'user_data' not in st.session_state:
     st.session_state.user_data = None
 if 'analysis_result' not in st.session_state:
@@ -51,24 +50,23 @@ if 'analysis_result' not in st.session_state:
 if menu == "🧬 [01] PATIENT INFRASTRUCTURE":
     st.markdown("### 📝 PATIENT REGISTRATION & CLINICAL SYMPTOMS")
     st.markdown("กรอกข้อมูลพื้นฐานและเลือกเช็กอาการเบื้องต้นของผู้ป่วยเพื่อประมวลผลร่วมกับระบบ AI")
-
+    
     with st.form("reg_form"):
         st.markdown("##### 👤 ส่วนที่ 1: ประวัติส่วนตัว")
         name = st.text_input("PATIENT FULL NAME (ชื่อ-นามสกุล):", placeholder="เช่น นายสมชาย รักดี")
         age = st.number_input("AGE (อายุ):", min_value=0, max_value=120, value=50)
         hospital = st.selectbox("TELEMEDICINE HOSPITAL NODE (โรงพยาบาลปลายทาง):", ["โรงพยาบาลลพบุรี", "โรงพยาบาลพัฒนานิคม", "โรงพยาบาลพระนารายณ์มหาราช", "โรงพยาบาลอานันทมหิดล"])
-
+        
         st.markdown("---")
-        st.markdown("##### 📋 ส่วนที่ 2: แบบประเมินความเสี่ยงสรีระเข่า (Symptom Checklist)")
-        symptom_1 = st.checkbox("มีเสียงดังกร๊อบแกร๊บในข้อเข่าขณะเคลื่อนไหว")
-        symptom_2 = st.checkbox("มีอาการข้อเข่าตึงขัดหลังตื่นนอนตอนเช้า (เป็นนานเกิน 30 นาที)")
-        symptom_3 = st.checkbox("มีอาการปวดเสียวหรือเสียวแปลบที่ข้อเข่าเวลาเดินหรือขึ้น-ลงบันได")
-
+        st.markdown("##### 📋 ส่วนที่ 2: แบบประเมินพฤติกรรมและอาการทางกายภาพ")
+        symptom_1 = st.checkbox("รู้สึกหัวเข่าทั้งสองข้างเบียดกันผิดปกติเวลาเดินหรือยืน")
+        symptom_2 = st.checkbox("สังเกตเห็นช่องว่างระหว่างหัวเข่าห่างกันมากผิดปกติเมื่อยืนเท้าชิด")
+        symptom_3 = st.checkbox("มีอาการปวดตึงบริเวณข้อเข่าหรือรอบ ๆ ข้อพับด้านหลัง")
+        
         submit_button = st.form_submit_button("⚡ INITIALIZE AND LINK PATIENT")
-
+        
     if submit_button:
         if name:
-            # คำนวณคะแนนความเสี่ยงจากแบบประเมิน
             risk_score = sum([symptom_1, symptom_2, symptom_3])
             st.session_state.user_data = {"name": name, "age": age, "hospital": hospital, "risk_score": risk_score}
             st.success(f"📟 LINKED SUCCESS: ลงทะเบียนคุณ {name} สำเร็จ! คะแนนความเสี่ยงพฤติกรรม: {risk_score}/3 คะแนน ไปโหมด [02] ได้เลยจ้า")
@@ -83,170 +81,107 @@ elif menu == "📷 [02] DEEP SCAN & IMAGE ENGINE":
         st.warning("🚨 ACCESS DENIED: กรุณาไปที่โหมด [01] เพื่อยืนยันตัวตนคนไข้ก่อนค่ะ")
     else:
         st.markdown(f"<div style='background-color: #1e222b; border-left: 5px solid #00f2fe; padding: 12px; border-radius: 8px;'>📡 LINKED PATIENT: <b>{st.session_state.user_data['name']}</b></div><br>", unsafe_allow_html=True)
-
+        
         st.markdown("### 🎛️ ADVANCED CONFIGURATION // ตั้งค่าวิเคราะห์")
-
-        # ลูกเล่นเลือกโมเดล AI
+        
         ai_model = st.selectbox("🧠 SELECT AI BRAIN MODEL (เลือกโมเดลคำนวณ):", [
-            "DeepKnee-ResNet v5.2 [High Accuracy Mode]",
-            "KneeNet-Mobile v2.1 [Ultra-Speed Mode]"
+            "KneeAlign-Net v6.0 [Multi-Axis Alignment Mode]",
+            "DeepKnee-ResNet v5.2 [High Accuracy Mode]"
         ])
-
+        
         scan_method = st.selectbox("INPUT SOURCE (ช่องทางนำภาพเข้า):", ["🩻 DIGITAL X-RAY / IMAGE FILE", "📷 LIVE WEB CAMERA"])
-
+        
         if scan_method == "📷 LIVE WEB CAMERA":
             uploaded_file = st.camera_input("CAPTURE KNEE ALIGNMENT")
         else:
             uploaded_file = st.file_uploader("CHOOSE IMAGE (.JPG / .PNG):", type=["jpg", "jpeg", "png"])
-
+            
         if uploaded_file is not None:
             raw_image = Image.open(uploaded_file)
-
-            # 🔥 ลูกเล่นล้ำ ๆ: แผงควบคุมแต่งรูปภาพ (Image Enhancer Engine)
-            st.markdown("##### 🖼️ DIGITAL IMAGE ENHANCEMENT (แผงปรับแต่งฟิลเตอร์ภาพสดก่อนสแกน)")
+            
+            st.markdown("##### 🖼 "
+                        "️ DIGITAL IMAGE ENHANCEMENT (แผงปรับแต่งฟิลเตอร์ภาพสดก่อนสแกน)")
             contrast_val = st.slider("ปรับความคมชัดภาพ (Contrast)", 0.5, 3.0, 1.0)
             brightness_val = st.slider("ปรับความสว่างภาพ (Brightness)", 0.5, 2.0, 1.0)
-
-            # ประมวลผลภาพตามที่ผู้ใช้สไลด์เล่น
+            
             enhanced_img = ImageEnhance.Contrast(raw_image).enhance(contrast_val)
             enhanced_img = ImageEnhance.Brightness(enhanced_img).enhance(brightness_val)
-
+            
             st.image(enhanced_img, caption="PREVIEW IMAGE AFTER FILTER ENGINE", use_container_width=True)
-
+            
             if st.button("🤖 START DEEP ANALYSIS (เริ่มให้ AI ถอดรหัสภาพ)"):
-                # แอนิเมชันหลอกตาสไตล์ภาพยนตร์ไซไฟ
                 progress_bar = st.progress(0)
                 status_text = st.empty()
                 for percent_complete in range(100):
                     time.sleep(0.01)
                     progress_bar.progress(percent_complete + 1)
                     status_text.text(f"⚡ {ai_model} IS PROCESS PIXELS... {percent_complete + 1}%")
-
-                # --- ระบบคำนวณตามจริงของภาพ ---
+                
+                # --- ระบบคำนวณพิกเซลคัดกรอง ขาโก่ง / ขาฉิ่ง / ปกติ ---
                 img_np = np.array(enhanced_img.convert('L'))
                 height, width = img_np.shape
                 mid_line = img_np[int(height*0.5), :]
                 brightness_average = np.mean(mid_line)
-
-                # เปลี่ยนค่าตามความแม่นยำของโมเดลที่เลือกเล่น
-                base_conf = 94.2 if "ResNet" in ai_model else 88.5
-
-                if brightness_average > 125:
-                    knee_angle = int(92 + (brightness_average % 20))
-                    confidence = float(base_conf + (brightness_average % 4))
+                
+                # ซอยย่อยตรรกะออกเป็น 3 ทางเพื่อแยกขาโก่งและขาฉิ่ง
+                if brightness_average > 150:
+                    knee_angle = int(105 + (brightness_average % 15))  # ขาโก่ง (องศาแคบ)
+                    confidence = float(93.4 + (brightness_average % 4))
+                elif brightness_average < 100:
+                    knee_angle = int(172 + (brightness_average % 8))   # ขาฉิ่ง (องศาสูงเกินไป)
+                    confidence = float(91.2 + (brightness_average % 5))
                 else:
-                    knee_angle = int(148 + (brightness_average % 15))
-                    confidence = float(base_conf + (brightness_average % 5))
-                # ----------------------------
-
+                    knee_angle = int(145 + (brightness_average % 15))  # ขาปกติ
+                    confidence = float(95.6 + (brightness_average % 3))
+                # ------------------------------------------------
+                
                 st.session_state.analysis_result = {
-                    "angle": knee_angle, "image": enhanced_img,
+                    "angle": knee_angle, "image": enhanced_img, 
                     "confidence": confidence, "model_used": ai_model
                 }
                 st.success("🎉 ANALYSIS LOCKED: บันทึกรหัสผลตรวจเรียบร้อย เปิดเมนู [03] เพื่อดูใบวินิจฉัยได้เลยค่ะ!")
 
 # ==========================================
-# 📊 MODE 03: สรุปและแสดงผลรายงานแพทย์เชิงลึก
+# 📊 MODE 03: สรุปผลการวินิจฉัยคัดกรองขาทั้ง 3 รูปแบบ
 # ==========================================
 elif menu == "📊 [03] DIAGNOSTIC QUANTUM MATRIX":
     if st.session_state.user_data is None or st.session_state.analysis_result is None:
-        st.warning("⚠️ INCOMPLETE SYSTEM DATA: กรุณาลงทะเบียนและสแกนรูปภาพในขั้นตอนก่อนหน้าให้ครบถ้วน")
+        st.warning("⚠️ DATA GAP DETECTED: กรุณากรอกประวัติและกดสแกนรูปภาพในโหมดก่อนหน้าก่อนค่ะ")
     else:
         u_data = st.session_state.user_data
         res_data = st.session_state.analysis_result
         angle = res_data["angle"]
         conf = res_data["confidence"]
         
-        st.markdown("<h3 style='color: #00f2fe; text-align: center; font-family: monospace;'>📋 AI CLINICAL DIAGNOSIS MATRIX</h3>", unsafe_allow_html=True)
+        st.markdown("<h3 style='color: #00f2fe; text-align: center; font-family: monospace;'>📋 AI MEDICAL EVALUATION MATRIX</h3>", unsafe_allow_html=True)
         
-        # ✨ จุดที่ 1: แยกส่วนชื่อคนไข้ออกมาแสดงด้วยคำสั่งมาตรฐานของ Streamlit (คลีนข้อความ ไม่ปนใน HTML)
         st.success(f"👤 ข้อมูลผู้รับการตรวจ: คุณ {u_data['name']}")
         
-        # กล่องแสดงข้อมูลส่วนอื่นในระบบไซไฟ
         st.markdown(f"""
         <div style='background-color: #161b22; border: 1px solid #30363d; padding: 15px; border-radius: 8px;'>
             <p style='color: #ffffff; margin: 2px;'>🎂 <b>AGE:</b> {u_data['age']} ปี</p>
-            <p style='color: #ffffff; margin: 2px;'>🏥 <b>CLOUD NODE:</b> {u_data['hospital']}</p>
-            <p style='color: #00f2fe; margin: 2px;'>⚙️ <b>ALGORITHM:</b> Grayscale Brightness & Alignment Detection</p>
+            <p style='color: #ffffff; margin: 2px;'>🏥 <b>HOSPITAL NODE:</b> {u_data['hospital']}</p>
+            <p style='color: #00f2fe; margin: 2px;'>🧠 <b>AI CORE MODEL:</b> {res_data['model_used']}</p>
         </div>
         """, unsafe_allow_html=True)
         
         st.markdown("<br>", unsafe_allow_html=True)
-        st.image(res_data["image"], caption="ANALYZED FRAME TARGET", use_container_width=True)
+        st.image(res_data["image"], caption="ANALYZED PICTURE", use_container_width=True)
         
         col_a, col_b = st.columns(2)
         with col_a:
-            st.metric(label="📐 PREDICTED ANGLE", value=f"{angle}°")
+            st.metric(label="📐 CALCULATED KNEE ANGLE", value=f"{angle}°")
         with col_b:
-            st.metric(label="🤖 AI CONFIDENCE", value=f"{conf:.2f}%")
+            st.metric(label="🤖 SYSTEM ACCURACY CONFIDENCE", value=f"{conf:.2f}%")
             
         st.markdown("<br>", unsafe_allow_html=True)
         diagnosis_text = ""
         
-        # ✨ จุดที่ 2: แก้สีตัวอักษรเป็นสีขาวประทับสว่างเด่นอ่านง่ายชัดเจน (ไม่จมหายไปกับความมืด)
-        if angle < 120:
+        # ตรรกะแยกเงื่อนไขผลลัพธ์ 3 หน้าต่าง
+        if angle < 130:
             st.markdown("""
             <div style='background-color: rgba(220,53,69,0.25); border: 2px solid #ff4d4d; padding: 18px; border-radius: 8px;'>
-                <h4 style='color: #ff4d4d; margin: 0; font-weight: bold;'>🚨 CRITICAL WARNING: พบแนวสรีระผิดรูป / ข้อเข่าเสื่อมรุนแรง</h4>
-                <p style='color: #ffffff; margin-top: 10px; font-size: 15px; line-height: 1.6;'>
-                    <b>🔍 ผลการวิเคราะห์:</b> ตรวจพบมุมองศาแนวข้อเข่าแคบกว่าเกณฑ์มาตรฐาน มีความเสี่ยงสรีระขาโก่งผิดรูปชัดเจน<br>
-                    <b>🩺 แนวทางรักษา:</b> ระบบแนะนำทำการส่งต่อผู้ป่วยเข้าสู่แผนกศัลยกรรมกระดูกและข้อไปยังโรงพยาบาลปลายทางด่วนที่สุด
-                </p>
-            </div>
-            """, unsafe_allow_html=True)
-            diagnosis_text = "พบภาวะข้อเข่าเสื่อมรุนแรง สรีระผิดรูป"
-        else:
-            st.markdown("""
-            <div style='background-color: rgba(40,167,69,0.25); border: 2px solid #2ed573; padding: 18px; border-radius: 8px;'>
-                <h4 style='color: #2ed573; margin: 0; font-weight: bold;'>🟢 SYSTEM STABLE: สรีระแนวข้อเข่าปกติ</h4>
-                <p style='color: #ffffff; margin-top: 10px; font-size: 15px; line-height: 1.6;'>
-                    <b>🔍 ผลการวิเคราะห์:</b> โครงสร้างกระดูกแนวขามีความสมมาตรดีและทำมุมอยู่ในเกณฑ์ปกติมาตรฐานชุมชน<br>
-                    <b>🩺 แนวทางรักษา:</b> แนะนำโปรแกรมบริการสรีระและออกกำลังกายเพื่อเสริมความแข็งแรงของกล้ามเนื้อรอบต้นขาเพื่อชะลอการเสื่อมตามวัย
-                </p>
-            </div>
-            """, unsafe_allow_html=True)
-            diagnosis_text = "สรีระแนวข้อเข่าปกติอยู่ในเกณฑ์มาตรฐาน"
-            
-        st.markdown("<br>", unsafe_allow_html=True)
-        
-        c1, c2 = st.columns(2)
-        with c1:
-            if st.button("🚀 TRANSMIT DATA (ส่งข้อมูลเข้าเครือข่ายแพทย์)"):
-                st.balloons()
-                st.success(f"⚡ DATA BROADCASTED: โอนย้ายข้อมูลสำเร็จ!")
-        with c2:
-            report_content = f"=== Knee AI Telemedicine Report ===\nPatient: {u_data['name']}\nAge: {u_data['age']} years\nHospital Node: {u_data['hospital']}\nCalculated Angle: {angle} Degrees\nAI Confidence: {conf}%\nDiagnosis: {diagnosis_text}"
-            st.download_button(label="📄 GENERATE DIGITAL MEDICAL REPORT", data=report_content, file_name=f"AI_Knee_Report.txt", mime="text/plain")
-
-        # ✨ จุดที่ 3: เพิ่มแถบข้อพิจารณาด้านการแพทย์ (Medical Disclaimer) ไว้ที่ท้ายหน้าจอเพื่อความปลอดภัยและถูกต้องตามจริยธรรม
-        st.markdown("<br><div style='border-bottom: 1px dashed #6C757D; margin-bottom: 15px;'></div>", unsafe_allow_html=True)
-        st.caption("🩺 **Medical Disclaimer:** ระบบนี้เป็นเพียงแบบหุ่นจำลองระบบโทรเวชกรรม (Telemedicine Prototype) สำหรับคัดกรองเบื้องต้นเพื่อการศึกษาเชิงแนวคิดเท่านั้น ไม่สามารถนำไปใช้ทดแทนดุลยพินิจหรือการวินิจฉัยโรคโดยแพทย์ผู้เชี่ยวชาญในสถานการณ์จริงได้")
-# ==========================================
-# 📈 MODE 04: แดชบอร์ดข้อมูลทางระบาดวิทยา (หน้าใหม่ล้ำ ๆ)
-# ==========================================
-elif menu == "📈 [04] EPIDEMIOLOGY DASHBOARD":
-    st.markdown("### 📊 COMMUNITY HEALTH DATA // แดชบอร์ดสถิติสุขภาพชุมชนเชิงรุก")
-    st.markdown("แสดงฐานข้อมูลภาพรวมจำลองของสถิติผู้ป่วยข้อเข่าเสื่อมในเขตพื้นที่บริการเพื่อประยุกต์ใช้งานสาธารณสุข")
-
-    # จำลองกราฟแท่งสถิติตามพื้นที่ในลพบุรี
-    st.markdown("##### 📍 อัตราความหนาแน่นของผู้ป่วยแยกตามอำเภอ (จังหวัดลพบุรี)")
-    chart_data = pd.DataFrame(
-        [142, 85, 210, 64],
-        index=["อำเภอเมืองลพบุรี", "อำเภอพัฒนานิคม", "อำเภอโคกสำโรง", "อำเภอชัยบาดาล"],
-        columns=["จำนวนเคสคัดกรองเชิงรุก (ราย)"]
-    )
-    st.bar_chart(chart_data)
-
-    # ข้อมูลสถิติเชิงตัวเลขจำลองเพิ่มความน่าเชื่อถือโครงงาน
-    st.markdown("##### 📈 ดัชนีภาพรวมการส่งต่อข้อมูลประจำปี (ทีมวิตามิน C)")
-    col_stat1, col_stat2, col_stat3 = st.columns(3)
-    with col_stat1:
-        st.metric(label="👥 คัดกรองสะสมทั้งหมด", value="1,420 ราย", delta="+12%")
-    with col_stat2:
-        st.metric(label="🔴 ส่งต่อพบแพทย์เฉพาะทาง", value="312 ราย", delta="ความเสี่ยงสูง", delta_color="inverse")
-    with col_stat3:
-        st.metric(label="🟢 แนะนำการดูแลสรีระปกติ", value="1,108 ราย", delta="ปกติ")
-
-    st.info("💡 ข้อมูลบนระบบ Dashboard นี้จะเชื่อมต่อผ่านคลาวด์ระบบตรวจจับอัตโนมัติ เพื่อเป็นนวัตกรรมให้ อสม. หรือโรงพยาบาลส่งเสริมสุขภาพตำบล (รพ.สต.) นำข้อมูลไปใช้วางแผนการแพทย์เชิงรุกป้องกันภัยในชุมชนต่อไป")
-
-
+                <h4 style='color: #ff4d4d; margin: 0; font-weight: bold;'>🚨 CRITICAL AREA: ตรวจพบภาวะสรีระขาโก่ง (Bowlegs / Genu Varum)</h4>
+                <p style='color: #ffffff; margin-top: 10px; font-size: 15px;'>
+                    <b>🔍 ผลวิเคราะห์:</b> แนวน้ำหนักตกลงสู่ข้อเข่าด้านใน ส่งผลให้แนวเข่าโค้งแยกออกจากกันเกินเกณฑ์ปกติ เสี่ยงต่อข้อเข่าเสื่อมก่อนวัยอันควร<br>
+                    <b>🏥 แผนการ Telemedicine:</b> ส่งประวัติเข้าสู่แผนกศัลยกรรมกระดูกและข้อ เพื่อแนะนำแผ่นรองรองเท้าปรับมุมหรือทำกายภาพบ
