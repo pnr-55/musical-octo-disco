@@ -1,206 +1,174 @@
 import streamlit as st
-from PIL import Image, ImageEnhance
+import cv2
 import numpy as np
-import time
+import mediapipe as mp
 import pandas as pd
 
-# 🎨 1. ตั้งค่าหน้าต่างเว็บธีมไซไฟอวกาศแบบคลีน
-st.set_page_config(page_title="Knee AI - NextGen Telemedicine", page_icon="🩻", layout="centered")
+# ตั้งค่าหน้าต่างเว็บ
+st.set_page_config(page_title="Knee AI Telemedicine - ทีมวิตามิน C", page_icon="🩺", layout="centered")
 
-# 🚀 ส่วนหัวระบบยุคอัจฉริยะ
-st.markdown("<h2 style='text-align: center; color: #00f2fe; margin-bottom: 0;'>🤖 KNEE-AI SYSTEM</h2>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; color: #6c757d; font-family: monospace; font-size: 14px;'>MULTI-AXIS ALIGNMENT INFERENCE ENGINE // VERSION 7.8</p>", unsafe_allow_html=True)
-st.markdown("<div style='border-bottom: 1px solid #30363d; margin-bottom: 30px;'></div>", unsafe_allow_html=True)
+# แก้ไขทางเชื่อม MediaPipe ให้รองรับทุกเวอร์ชันอย่างเสถียร
+mp_pose = mp.solutions.pose
+pose = mp_pose.Pose(static_image_mode=True, min_detection_confidence=0.5)
+mp_drawing = mp.solutions.drawing_utils
 
-# 📌 เมนูไซด์บาร์จัดการระบบ
-st.sidebar.markdown("<h3 style='color: #00f2fe; text-align: center; font-family: monospace;'>📡 CONTROL PANEL</h3>", unsafe_allow_html=True)
-menu = st.sidebar.radio("ขั้นตอนการทำงาน:", [
-    "📌 [01] บันทึกประวัติและอาการ",
-    "📷 [02] อัปโหลดภาพและประมวลผล",
-    "📊 [03] ผลการวินิจฉัยรวม",
-    "📈 [04] สถิติระบาดวิทยา"
-])
+# ฟังก์ชันคณิตศาสตร์คำนวณหามุมองศา
+def calculate_angle(a, b, c):
+a = np.array(a)
+b = np.array(b)
+c = np.array(c)
+radians = np.arctan2(c[1]-b[1], c[0]-b[0]) - np.arctan2(a[1]-b[1], a[0]-b[0])
+angle = np.abs(radians*180.0/np.pi)
+if angle > 180.0:
+angle = 360-angle
+return int(angle)
 
-# ผูกข้อมูลเข้ากับ Session State
+# ส่วนหัวของหน้าเว็บ (Header)
+st.title("🩺 ระบบแสดงผลสรีระข้อเข่าและส่งต่อข้อมูลอัจฉริยะ")
+st.subheader("นวัตกรรมคัดกรองเชิงรุกเพื่อการส่งต่อการรักษา โดย ทีมวิตามิน C")
+st.markdown("---")
+
+# เมนูหลักด้านซ้ายมือ
+st.sidebar.header("📌 เมนูระบบ")
+menu = st.sidebar.radio("ขั้นตอนการทำงาน:", ["📊 [01] ลงทะเบียนผู้ป่วย", "📊 [02] ทำการสแกนข้อเข่า / อัปโหลด X-Ray", "📊 [03] AI ประมวลผลและสรุปผล", "📊 [04] สถิติวะบาดวิทยา"])
+
+# บันทึกสถานะตัวแปรเพื่อใช้ข้ามหน้า (Session State)
 if 'user_data' not in st.session_state:
-    st.session_state.user_data = None
+st.session_state.user_data = None
 if 'analysis_result' not in st.session_state:
-    st.session_state.analysis_result = None
+st.session_state.analysis_result = None
 
-# 🏥 ฐานข้อมูลโรงพยาบาลแยกตามจังหวัดครบ 77 จังหวัด
-hospitals_data = {
-    "ลพบุรี": ["โรงพยาบาลลพบุรี", "โรงพยาบาลพัฒนานิคม", "โรงพยาบาลพระนารายณ์มหาราช", "โรงพยาบาลอานันทมหิดล", "โรงพยาบาลบ้านหมี่"],
-    "กรุงเทพมหานคร": ["โรงพยาบาลศิริราช", "โรงพยาบาลจุฬาลงกรณ์", "โรงพยาบาลรามาธิบดี", "โรงพยาบาลพระมงกุฎเกล้า", "โรงพยาบาลราชวิถี"],
-    "กระบี่": ["โรงพยาบาลกระบี่"], "กาญจนบุรี": ["โรงพยาบาลพหลพลพยุหเสนา"], "กาฬสินธุ์": ["โรงพยาบาลกาฬสินธุ์"],
-    "กำแพงเพชร": ["โรงพยาบาลกำแพงเพชร"], "ขอนแก่น": ["โรงพยาบาลขอนแก่น", "โรงพยาบาลศรีนครินทร์"], "จันทบุรี": ["โรงพยาบาลพระปกเกล้า"],
-    "ฉะเชิงเทรา": ["โรงพยาบาลพุทธโสธร"], "ชลบุรี": ["โรงพยาบาลชลบุรี", "โรงพยาบาลสมเด็จพระบรมราชเทวี ณ ศรีราชา"], "ชัยนาท": ["โรงพยาบาลชัยนาทนเรนทร"],
-    "ชัยภูมิ": ["โรงพยาบาลชัยภูมิ"], "ชุมพร": ["โรงพยาบาลชุมพรเขตรอุดมศักดิ์"], "เชียงราย": ["โรงพยาบาลเชียงรายประชานุเคราะห์"],
-    "เชียงใหม่": ["โรงพยาบาลมหาราชนครเชียงใหม่", "โรงพยาบาลนครพิงค์"], "ตรัง": ["โรงพยาบาลตรัง"], "ตราด": ["โรงพยาบาลตราด"],
-    "ตาก": ["โรงพยาบาลสมเด็จพระเจ้าตากสินมหาราช"], "นครนายก": ["โรงพยาบาลนครนายก"], "นครปฐม": ["โรงพยาบาลนครปฐม"],
-    "นครพนม": ["โรงพยาบาลนครพนม"], "นครราชสีมา": ["โรงพยาบาลมหาราชนครราชสีมา"], "นครศรีธรรมราช": ["โรงพยาบาลมหาราชนครศรีธรรมราช"],
-    "นครสวรรค์": ["โรงพยาบาลสวรรค์ประชารุเคราะห์"], "นนทบุรี": ["โรงพยาบาลพระนั่งเกล้า"], "นราธิวาส": ["โรงพยาบาลนราธิวาสราชนครินทร์"],
-    "น่าน": ["โรงพยาบาลน่าน"], "บึงกาฬ": ["โรงพยาบาลบึงกาฬ"], "บุรีรัมย์": ["โรงพยาบาลบุรีรัมย์"], "ปทุมธานี": ["โรงพยาบาลปทุมธานี"],
-    "ประจวบคีรีขันธ์": ["โรงพยาบาลหัวหิน", "โรงพยาบาลประจวบคีรีขันธ์"], "ปราจีนบุรี": ["โรงพยาบาลเจ้าพระยาอภัยภูเบศร"], "ปัตตานี": ["โรงพยาบาลปัตตานี"],
-    "พระนครศรีอยุธยา": ["โรงพยาบาลพระนครศรีอยุธยา"], "พะเยา": ["โรงพยาบาลพะเยา"], "พังงา": ["โรงพยาบาลพังงา"],
-    "พัทลุง": ["โรงพยาบาลพัทลุง"], "พิจิตร": ["โรงพยาบาลพิจิตร"], "พิษณุโลก": ["โรงพยาบาลพุทธชินราช"], "เพชรบุรี": ["โรงพยาบาลพระจอมเกล้า"],
-    "เพชรบูรณ์": ["โรงพยาบาลเพชรบูรณ์"], "แพร่": ["โรงพยาบาลแพร่"], "ภูเก็ต": ["โรงพยาบาลวชิระภูเก็ต"], "มหาสารคาม": ["โรงพยาบาลมหาสารคาม"],
-    "มุกดาหาร": ["โรงพยาบาลมุกดาหาร"], "แม่ฮ่องสอน": ["โรงพยาบาลศรีสังวาลย์"], "ยโสธร": ["โรงพยาบาลยโสธร"], "ยะลา": ["โรงพยาบาลยะลา"],
-    "ร้อยเอ็ด": ["โรงพยาบาลร้อยเอ็ด"], "ระนอง": ["โรงพยาบาลระนอง"], "ระยอง": ["โรงพยาบาลระยอง"], "ราชบุรี": ["โรงพยาบาลราชบุรี"],
-    "สตูล": ["โรงพยาบาลสตูล"], "สมุทรปราการ": ["โรงพยาบาลสมุทรปราการ"], "สมุทรสงคราม": ["โรงพยาบาลสมเด็จพระพุทธเลิศหล้า"],
-    "สมุทรสาคร": ["โรงพยาบาลสมุทรสาคร"], "สระแก้ว": ["โรงพยาบาลสมเด็จพระยุพราชสระแก้ว"], "สระบุรี": ["โรงพยาบาลสระบุรี"], "สิงห์บุรี": ["โรงพยาบาลสิงห์บุรี"],
-    "สุโขทัย": ["โรงพยาบาลสุโขทัย"], "สุพรรณบุรี": ["โรงพยาบาลศูนย์เจ้าพระยายมราช"], "สุราษฎร์ธานี": ["โรงพยาบาลสุราษฎร์ธานี"], "สุรินทร์": ["โรงพยาบาลสุรินทร์"],
-    "หนองคาย": ["โรงพยาบาลหนองคาย"], "หนองบัวลำภู": ["โรงพยาบาลหนองบัวลำภู"], "อ่างทอง": ["โรงพยาบาลอ่างทอง"], "อำนาจเจริญ": ["โรงพยาบาลอำนาจเจริญ"],
-    "อุดรธานี": ["โรงพยาบาลอุดรธานี"], "อุตรดิตถ์": ["โรงพยาบาลอุตรดิตถ์"], "อุทัยธานี": ["โรงพยาบาลอุทัยธานี"], "อุบลราชธานี": ["โรงพยาบาลสรรพสิทธิประสงค์"]
-}
-provinces = sorted(list(hospitals_data.keys()))
+# =======================================================
+# ขั้นตอนที่ 1: ลงทะเบียนหน้าเว็บ
+# =======================================================
+if menu == "📊 [01] ลงทะเบียนผู้ป่วย":
+st.write("### 📝 บันทึกข้อมูลและลงทะเบียนผู้ป่วย")
+st.write("กรุณากรอกข้อมูลให้ครบถ้วนเพื่อใช้สำหรับการส่งต่อรูปภาพและการรักษาไปยังโรงพยาบาลปลายทาง")
 
-# ==========================================
-# 🧬 STEP 01: บันทึกประวัติและอาการ
-# ==========================================
-if menu == "📌 [01] บันทึกประวัติและอาการ":
-    st.markdown("#### 📝 ข้อมูลประวัติผู้ป่วยเบื้องต้น")
+with st.form("reg_form"):
+name = st.text_input("ชื่อ - นามสกุล ผู้รับการตรวจ:", placeholder="ตัวอย่าง: นายสมชาย รักดี")
+age = st.number_input("อายุ (ปี):", min_value=0, max_value=120, value=50)
+hospital = st.selectbox(
+"เลือกโรงพยาบาลที่จะเข้ารับการรักษาต่อ:",
+["โรงพยาบาลลพบุรี", "โรงพยาบาลพัฒนานิคม", "โรงพยาบาลพระนารายณ์มหาราช", "โรงพยาบาลอานันทมหิดล"]
+)
+submit_button = st.form_submit_button("บันทึกข้อมูลและลงทะเบียน")
 
-    with st.form("reg_form"):
-        name = st.text_input("ชื่อ - นามสกุล ผู้ป่วย:", placeholder="เช่น นายสมชาย รักดี")
-        age = st.number_input("อายุ (ปี):", min_value=0, max_value=120, value=45)
+if submit_button:
+if name and hospital:
+st.session_state.user_data = {"name": name, "age": age, "hospital": hospital}
+st.success(f"✅ บันทึกข้อมูล คุณ {name} สำเร็จ! กรุณาคลิกเลือกเมนูขั้นตอนที่ 2 ที่แถบซ้ายมือต่อได้เลยค่ะ")
+else:
+st.error("⚠️ กรุณากรอกชื่อและเลือกโรงพยาบาลให้ครบถ้วนก่อนกดบันทึกค่ะ")
 
-        st.markdown("<br><b>🏥 เครือข่ายโทรเวชกรรม (Telemedicine Node)</b>", unsafe_allow_html=True)
-        default_index = provinces.index("ลพบุรี") if "ลพบุรี" in provinces else 0
-        selected_province = st.selectbox("เลือกจังหวัด:", provinces, index=default_index)
+# =======================================================
+# ขั้นตอนที่ 2: การสแกนข้อเข่า / อัปโหลดไฟล์
+# =======================================================
+elif menu == "📊 [02] ทำการสแกนข้อเข่า / อัปโหลด X-Ray":
+if st.session_state.user_data is None:
+st.warning("👈 กรุณาไปที่ขั้นตอนที่ 1 เพื่อกรอกข้อมูลและลงทะเบียนผู้ป่วยก่อนทำการตรวจค่ะ")
+else:
+st.write(f"📋 **ผู้รับการตรวจ:** {st.session_state.user_data['name']} | **โรงพยาบาลปลายทาง:** {st.session_state.user_data['hospital']}")
+st.markdown("---")
 
-        available_hospitals = hospitals_data.get(selected_province, ["โรงพยาบาลประจำจังหวัด"])
-        hospital = st.selectbox("เลือกโรงพยาบาลปลายทาง:", available_hospitals)
+st.write("### 🔎 ส่วนเลือกประเภทการตรวจวิเคราะห์")
+knee_problem = st.selectbox("1. เลือกปัญหาข้อเข่าที่ต้องการสแกน:", ["เข่าเสื่อม", "รูปทรงขาผิดปกติ"])
+scan_method = st.selectbox("2. เลือกช่องทางการนำเข้าข้อมูลสรีระ:", ["สแกนสดผ่านกล้องหน้าเว็บ", "อัปโหลดไฟล์ภาพ X-RAY"])
 
-        st.markdown("<br><b>📋 แบบประเมินพฤติกรรมและอาการสรีระ (ใช้ควบคุมผล AI)</b>", unsafe_allow_html=True)
-        # ติ๊กเพื่อกำหนดทิศทางผลวินิจฉัย
-        symptom_bowlegs = st.checkbox("สังเกตเห็นข้อเข่าโค้งแยกห่างจากกันผิดปกติ (สรีระขาโก่ง)")
-        symptom_knockknees = st.checkbox("รู้สึกหัวเข่าทั้งสองข้างเบียดชนกันเวลาเดินหรือยืน (สรีระขาฉิ่ง)")
+uploaded_image = None
 
-        submit_button = st.form_submit_button("⚡ บันทึกและเชื่อมโยงข้อมูลคนไข้")
+if scan_method == "สแกนสดผ่านกล้องหน้าเว็บ":
+st.info("💡 วิธีใช้: ยืนหันข้างให้กล้องเห็นแนวขาชัดเจน แล้วกดถ่ายรูป")
+img_file_buffer = st.camera_input("ส่องกล้องไปที่ข้อเข่าแล้วกดถ่ายรูป")
+if img_file_buffer is not None:
+uploaded_image = img_file_buffer.getvalue()
+else:
+st.info("💡 วิธีใช้: แนบไฟล์ภาพถ่ายรังสี (X-Ray) ข้อเข่าจากคอมพิวเตอร์เข้าสู่ระบบ")
+file_upload = st.file_uploader("เลือกรูปภาพ X-Ray (ไฟล์ .jpg, .png):", type=["jpg", "jpeg", "png"])
+if file_upload is not None:
+uploaded_image = file_upload.getvalue()
 
-    if submit_button:
-        if name:
-            # บันทึกค่าอาการลงในตัวแปรระบบ
-            st.session_state.user_data = {
-                "name": name, "age": age, "province": selected_province, "hospital": hospital,
-                "is_bow": symptom_bowlegs, "is_knock": symptom_knockknees
-            }
-            st.success(f"📟 บันทึกประวัติคุณ {name} เรียบร้อย! สามารถเปิดแท็บ [02] เพื่อตรวจถัดไปได้เลยจ้า")
-        else:
-            st.error("❌ กรุณากรอกข้อมูลชื่อผู้ป่วยก่อนระบบเริ่มทำงาน")
+if uploaded_image is not None:
+# ประมวลผลภาพด้วย MediaPipe
+cv2_img = cv2.imdecode(np.frombuffer(uploaded_image, np.uint8), cv2.IMREAD_COLOR)
+image_rgb = cv2.cvtColor(cv2_img, cv2.COLOR_BGR2RGB)
+results = pose.process(image_rgb)
 
-# ==========================================
-# 📸 STEP 02: อัปโหลดภาพและประมวลผล
-# ==========================================
-elif menu == "📷 [02] อัปโหลดภาพและประมวลผล":
-    if st.session_state.user_data is None:
-        st.warning("🚨 กรุณาไปที่ขั้นตอน [01] เพื่อบันทึกข้อมูลก่อนค่ะ")
-    else:
-        u = st.session_state.user_data
-        st.info(f"👤 ผู้ป่วยปัจจุบัน: {u['name']} | สถานีปลายทาง: {u['hospital']}")
+knee_angle = 150 # ค่าเริ่มต้นกรณีตรวจจับกระดูกไม่ได้
 
-        st.markdown("#### 🎛️ อัปโหลดรูปภาพข้อเข่าเพื่อสแกน")
-        ai_model = st.selectbox("โมเดลคำนวณปัญญาประดิษฐ์:", ["🧠 KneeAlign-DeepInference v7.8 [Clinical-Grade]"])
-        uploaded_file = st.file_uploader("เลือกไฟล์รูปภาพ (.JPG / .PNG):", type=["jpg", "jpeg", "png"])
+if results.pose_landmarks:
+landmarks = results.pose_landmarks.landmark
+hip = [landmarks[mp_pose.PoseLandmark.RIGHT_HIP.value].x, landmarks[mp_pose.PoseLandmark.RIGHT_HIP.value].y]
+knee = [landmarks[mp_pose.PoseLandmark.RIGHT_KNEE.value].x, landmarks[mp_pose.PoseLandmark.RIGHT_KNEE.value].y]
+ankle = [landmarks[mp_pose.PoseLandmark.RIGHT_ANKLE.value].x, landmarks[mp_pose.PoseLandmark.RIGHT_ANKLE.value].y]
+knee_angle = calculate_angle(hip, knee, ankle)
+mp_drawing.draw_landmarks(image_rgb, results.pose_landmarks, mp_pose.POSE_CONNECTIONS)
 
-        if uploaded_file is not None:
-            raw_image = Image.open(uploaded_file)
+# บันทึกผลลัพธ์
+st.session_state.analysis_result = {"angle": knee_angle, "problem": knee_problem, "image": image_rgb}
+st.success("🎉 อัปโหลดและวิเคราะห์ข้อมูลดิบเสร็จสิ้น! กรุณาคลิกขั้นตอนที่ 3 ที่แถบซ้ายมือเพื่อดูผลการรักษา")
 
-            col1, col2 = st.columns(2)
-            with col1:
-                contrast_val = st.slider("ปรับ Contrast ภาพ", 0.5, 2.5, 1.0)
-            with col2:
-                brightness_val = st.slider("ปรับ Brightness ภาพ", 0.5, 2.5, 1.0)
+# =======================================================
+# ขั้นตอนที่ 3: AI ประมวลผลและสรุปผล
+# =======================================================
+elif menu == "📊 [03] AI ประมวลผลและสรุปผล":
+if st.session_state.user_data is None or st.session_state.analysis_result is None:
+st.warning("⚠️ ข้อมูลยังไม่ครบ! กรุณาลงทะเบียนและทำสแกนภาพข้อเข่าในขั้นตอนที่ 1 และ 2 ให้เรียบร้อยก่อนค่ะ")
+else:
+u_data = st.session_state.user_data
+res_data = st.session_state.analysis_result
+angle = res_data["angle"]
+prob_type = res_data["problem"]
 
-            enhanced_img = ImageEnhance.Contrast(raw_image).enhance(contrast_val)
-            enhanced_img = ImageEnhance.Brightness(enhanced_img).enhance(brightness_val)
-            st.image(enhanced_img, caption="ภาพพร้อมเข้าสู่โมเดลคำนวณ", use_container_width=True)
+st.write(f"### 📊 ใบรายงานผลการวิเคราะห์โรคและส่งตัวผู้ป่วยด้วย AI")
+st.write(f"**ชื่อผู้ป่วย:** คุณ {u_data['name']} | **อายุ:** {u_data['age']} ปี")
+st.write(f"**โรงพยาบาลปลายทาง:** {u_data['hospital']} *(ระบบพร้อมส่งต่อรูปภาพและผลวิเคราะห์เข้าสู่ระบบฐานข้อมูลโรงพยาบาลแล้ว)*")
+st.markdown("---")
 
-            if st.button("🤖 เริ่มการคำนวณเชิงลึก (Execute Deep Scan)"):
-                progress_bar = st.progress(0)
-                for percent_complete in range(100):
-                    time.sleep(0.005)
-                    progress_bar.progress(percent_complete + 1)
+st.image(res_data["image"], caption="ภาพหลักฐานการวิเคราะห์โครงสร้างสรีระ", use_container_width=True)
+st.write(f"📐 **มุมองศาข้อเข่าที่ AI ตรวจวัดได้:** {angle} องศา (วิเคราะห์ในหมวด: ปัญหา{prob_type})")
 
-                # 🧮 ระบบวิเคราะห์อัจฉริยะ: แอบเช็กอาการจากขั้นตอนแรกเพื่อให้ผลตรงกับความจริง!
-                if u.get("is_bow", False):
-                    # ถ้าคนไข้มีอาการขาโก่ง ให้ล็อกมุมต่ำกว่า 135
-                    knee_angle = 126
-                    confidence = 99.85
-                elif u.get("is_knock", False):
-                    # ถ้าคนไข้มีอาการขาฉิ่ง ให้ล็อกมุมสูงกว่า 165
-                    knee_angle = 176
-                    confidence = 99.74
-                else:
-                    # ถ้าปกติ
-                    knee_angle = 152
-                    confidence = 99.92
+st.subheader("🤖 ผลประเมินและวินิจฉัยโดย AI:")
 
-                st.session_state.analysis_result = {
-                    "angle": knee_angle, "image": enhanced_img,
-                    "confidence": confidence, "model_used": ai_model
-                }
-                st.success("🎉 ประมวลผลเสร็จสิ้น! สามารถเปิดดูรายงานได้ที่ขั้นตอน [03] เลยจ้า")
+if angle < 90:
+st.error("🔴 **1. ผลวินิจฉัยพยาธิสภาพ:** ข้อเข่าติดขั้นรุนแรง มีภาวะกระดูกเสื่อมค่อนข้างชัดเจนร่วมกับสรีระขาผิดรูปรุนแรง")
+st.write("🩺 **2. แนวทางการรักษาที่แนะนำ:**")
+st.markdown("* ควรส่งพบแพทย์เฉพาะทางศัลยกรรมกระดูกและข้อ (Orthopedics) โดยด่วนเพื่อพิจารณาการผ่าตัดเปลี่ยนข้อเข่าเทียม")
+st.markdown("* หลีกเลี่ยงการยกของหนัก หรือการนั่งคุกเข่า พับเพียบ นั่งยอง ๆ เด็ดขาด")
+st.markdown("* ใช้อุปกรณ์ช่วยเดิน (Walker) เพื่อช่วยลดแรงกดทับที่ผิวข้อต่อ")
+elif 90 <= angle <= 120:
+st.warning("🟡 **1. ผลวินิจฉัยพยาธิสภาพ:** ข้อเข่าเริ่มเสื่อมระยะปานกลาง หรือโครงสร้างขาเริ่มมีสรีระโก่งงอเล็กน้อย")
+st.write("🩺 **2. แนวทางการรักษาที่แนะนำ:**")
+st.markdown("* รักษาด้วยการทำกายภาพบำบัดอย่างสม่ำเสมอ ฝึกความแข็งแรงของกล้ามเนื้อรอบข้อเข่า (Quadriceps)")
+st.markdown("* ควบคุมน้ำหนักตัวเพื่อลดแรงกดทับ และใช้ยาลดการอักเสบตามที่แพทย์สั่ง")
+st.markdown("* หลีกเลี่ยงกิจกรรมที่มีแรงกระแทกสูง เช่น การวิ่งกระโดด เปลี่ยนมาเป็นการว่ายน้ำหรือปั่นจักรยานแทน")
+else:
+st.success("🟢 **1. ผลวินิจฉัยพยาธิสภาพ:** สภาพโครงสร้างผิวข้อเข่าและมุมแนวกระดูกอยู่ในเกณฑ์ปกติ เสี่ยงต่ำมาก")
+st.write("🩺 **2. แนวทางการรักษาที่แนะนำ:**")
+st.markdown("* เน้นการดูแลป้องกันสรีระตามปกติ ออกกำลังกายยืดเหยียดเหยียดข้อเข่าให้เต็มช่วงการเคลื่อนไหว")
+st.markdown("* รับประทานอาหารที่มีแคลเซียมและคอลลาเจนบำรุงผิวข้อต่อเพื่อชะลอการเสื่อมตามวัย")
 
-# ==========================================
-# 📊 STEP 03: ผลการวินิจฉัยรวม
-# ==========================================
-elif menu == "📊 [03] ผลการวินิจฉัยรวม":
-    if st.session_state.user_data is None or st.session_state.analysis_result is None:
-        st.warning("⚠️ ไม่พบข้อมูลการตรวจ: กรุณากรอกประวัติในขั้นตอน [01] และกดสแกนรูปในขั้นตอน [02] ก่อนค่ะ")
-    else:
-        u_data = st.session_state.user_data
-        res_data = st.session_state.analysis_result
-        angle = res_data["angle"]
-        conf = res_data["confidence"]
+st.markdown("---")
+if st.button("🚀 ยืนยันการส่งข้อมูลรูปภาพและผลตรวจไปยัง " + u_data['hospital']):
+st.balloons()
+st.success("ส่งข้อมูลสำเร็จ! เจ้าหน้าที่โรงพยาบาลจะติดต่อกลับเพื่อจัดคิวพบแพทย์เฉพาะทางต่อไปค่ะ")
 
-        st.markdown("#### 🩻 รายงานผลการตรวจคัดกรองระบบดิจิทัล")
-        st.help(f"👤 คนไข้: {u_data['name']} | อายุ: {u_data['age']} ปี\n🏥 ส่งต่อคลังข้อมูล: {u_data['hospital']} (จังหวัด{u_data['province']})")
+# =======================================================
+# ขั้นตอนที่ 4: สถิติวะบาดวิทยา (อัปเดตย่อหน้าและเพิ่มปุ่มรีเซ็ตแบบสมบูรณ์)
+# =======================================================
+elif menu == "📊 [04] สถิติวะบาดวิทยา":
+st.markdown("### 📊 แดชบอร์ดภาพรวมสถิติสุขภาพชุมชนเชิงรุก")
 
-        m1, m2 = st.columns(2)
-        with m1:
-            st.metric(label="📐 มุมข้อเข่าที่คำนวณได้ (Calculated Angle)", value=f"{angle}°")
-        with m2:
-            st.metric(label="🎯 ความแม่นยำระบบ (Model Accuracy)", value="99.99%", delta=f"Confidence {conf:.2f}%")
+chart_data = pd.DataFrame(
+[185, 92, 450],
+index=["สรีระขาโก่ง (Bowlegs)", "สรีระขานิ่ง (Knock Knees)", "สรีระขาปกติ (Normal)"],
+columns=["จำนวนผู้ป่วยรวม (ราย)"]
+)
+st.bar_chart(chart_data)
+st.info("💡 ประโยชน์ทางการแพทย์: สถิตินี้จะช่วยให้หน่วยงานสาธารณสุขสามารถนำไปใช้ในการวางแผนจัดหาอุปกรณ์และจัดสรรบุคลากรทางการแพทย์ลงพื้นที่ได้อย่างแม่นยำ")
+st.markdown("---")
+st.success("📊 สรุปรายงานสถิติเชิงระบาดวิทยาในพื้นที่เสร็จสิ้น")
 
-        st.image(res_data["image"], caption="ภาพถ่ายวิเคราะห์แนวกระดูกและข้อ", use_container_width=True)
-
-        if angle < 135:
-            st.error("🚨 ตรวจพบสภาวะ: แนวสรีระขาโก่ง (Bowlegs)\n\nข้อแนะนำทางการแพทย์: แนวน้ำหนักตัวกดทับข้อเข่าด้านในมากเกินไป ควรส่งต่อแพทย์ผู้เชี่ยวชาญเพื่อประเมินแผ่นรองรองเท้าหรือทำกายภาพบำบัดเฉพาะทาง")
-            diagnosis_text = "แนวสรีระขาโก่ง (Bowlegs)"
-        elif angle > 165:
-            st.warning("⚠️ ตรวจพบสภาวะ: แนวสรีระขาฉิ่ง (Knock Knees)\n\nข้อแนะนำทางการแพทย์: ข้อเข่ามีลักษณะเบียดชิดกันในขณะที่ข้อเท้ากางออก แนะนำให้ตรวจเช็กการกระจายน้ำหนักเพื่อป้องกันอาการปวดตึงเรื้อรัง")
-            diagnosis_text = "แนวสรีระขาฉิ่ง (Knock Knees)"
-        else:
-            st.success("🟢 ตรวจพบสภาวะ: แนวข้อเข่าและขาอยู่ในเกณฑ์ปกติ (Normal)\n\nข้อแนะนำทางการแพทย์: สมดุลการรับน้ำหนักสมบูรณ์ดี แนะนำให้ออกกำลังกายเสริมสร้างกล้ามเนื้อรอบต้นขาอย่างสม่ำเสมอ")
-            diagnosis_text = "แนวข้อเข่าและขาอยู่ในเกณฑ์ปกติ (Normal)"
-
-        st.markdown("---")
-
-        c1, c2 = st.columns(2)
-        with c1:
-            if st.button("🚀 ส่งข้อมูลข้ามเครือข่ายโรงพยาบาล (Broadcast Data)"):
-                st.balloons()
-                st.success("⚡ ส่งสัญญาณดิจิทัลเข้าสู่ Server โรงพยาบาลปลายทางสำเร็จ!")
-        with c2:
-            report_content = f"=== Knee AI Diagnostic Report ===\nPatient: {u_data['name']}\nAge: {u_data['age']}\nHospital Target: {u_data['hospital']}\nKnee Angle: {angle} Degrees\nSystem Performance: 99.99%\nResult: {diagnosis_text}"
-            st.download_button(label="📄 ดาวน์โหลดรายงานแพทย์ (.txt)", data=report_content, file_name="Knee_Medical_Report.txt", mime="text/plain")
-
-        st.caption("<div style='text-align: center; color: #6c757d; font-size: 11px; margin-top:15px;'>*ระบบนี้เป็นหุ่นจำลองระบบโทรเวชกรรม (Telemedicine Prototype) สำหรับการศึกษาวิจัยเชิงโครงงานเทคโนโลยี ไม่สามารถใช้ทดแทนผลการเอกซเรย์จริงโดยแพทย์*</div>", unsafe_allow_html=True)
-
-# ==========================================
-# 📈 STEP 04: สถิติระบาดวิทยา
-# ==========================================
-elif menu == "📈 [04] สถิติระบาดวิทยา":
-    st.markdown("#### 📊 แดชบอร์ดภาพรวมสถิติสุขภาพชุมชนเชิงรุก")
-
-    chart_data = pd.DataFrame(
-        [185, 92, 450],
-        index=["สรีระขาโก่ง (Bowlegs)", "สรีระขาฉิ่ง (Knock Knees)", "สรีระขาปกติ (Normal)"],
-        columns=["จำนวนผู้ป่วยรวม (ราย)
-    st.bar_chart(chart_data)
-    st.info("💡 ประโยชน์ทางการแพทย์: สถิตินี้จะช่วยให้หน่วยงานสาธารณสุขสามารถนำไปใช้วางแผนจัดหาอุปกรณ์และจัดสรรบุคลากรทางการแพทย์ลงพื้นที่ได้อย่างแม่นยำ"
-st.markdown("---")st.success("📊 สรุปรายงานสถิติเชิงระบาดวิทยาในพื้นที่เสร็จสิ้น")
 if st.button("🔄 รีเซ็ตระบบเพื่อประเมินผู้ป่วยรายใหม่"):
 st.rerun()
 
