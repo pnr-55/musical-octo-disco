@@ -4,42 +4,40 @@ import numpy as np
 import mediapipe as mp
 import pandas as pd
 
-# ตั้งค่าหน้าต่างเว็บ
+# 1. ตั้งค่าหน้าต่างเว็บแอปพลิเคชัน
 st.set_page_config(page_title="Knee AI Telemedicine - ทีมวิตามิน C", page_icon="🩺", layout="centered")
 
-# แก้ไขทางเชื่อม MediaPipe ให้รองรับทุกเวอร์ชันอย่างเสถียร
-mp_pose = mp.solutions.pose
-pose = mp_pose.Pose(static_image_mode=True, min_detection_confidence=0.5)
-mp_drawing = mp.solutions.drawing_utils
-
-# ฟังก์ชันคณิตศาสตร์คำนวณหามุมองศา
-def calculate_angle(a, b, c):
-a = np.array(a)
-b = np.array(b)
-c = np.array(c)
-radians = np.arctan2(c[1]-b[1], c[0]-b[0]) - np.arctan2(a[1]-b[1], a[0]-b[0])
-angle = np.abs(radians*180.0/np.pi)
-if angle > 180.0:
-angle = 360-angle
-return int(angle)
-
-# ส่วนหัวของหน้าเว็บ (Header)
-st.title("🩺 ระบบแสดงผลสรีระข้อเข่าและส่งต่อข้อมูลอัจฉริยะ")
-st.subheader("นวัตกรรมคัดกรองเชิงรุกเพื่อการส่งต่อการรักษา โดย ทีมวิตามิน C")
-st.markdown("---")
-
-# เมนูหลักด้านซ้ายมือ
-st.sidebar.header("📌 เมนูระบบ")
-menu = st.sidebar.radio("ขั้นตอนการทำงาน:", ["📊 [01] ลงทะเบียนผู้ป่วย", "📊 [02] ทำการสแกนข้อเข่า / อัปโหลด X-Ray", "📊 [03] AI ประมวลผลและสรุปผล", "📊 [04] สถิติวะบาดวิทยา"])
-
-# บันทึกสถานะตัวแปรเพื่อใช้ข้ามหน้า (Session State)
+# 2. เริ่มต้นระบบจัดการ Session State สำหรับบันทึกข้อมูล
 if 'user_data' not in st.session_state:
 st.session_state.user_data = None
 if 'analysis_result' not in st.session_state:
 st.session_state.analysis_result = None
 
+# 3. ฟังก์ชันคำนวณมุมองศาข้อเข่า (จัดหน้าแบบปลอดภัย)
+def calculate_angle(a, b, c):
+point_a = np.array(a)
+point_b = np.array(b)
+point_c = np.array(c)
+radians = np.arctan2(point_c[1]-point_b[1], point_c[0]-point_b[0]) - np.arctan2(point_a[1]-point_b[1], point_a[0]-point_b[0])
+angle = np.abs(radians * 180.0 / np.pi)
+if angle > 180.0:
+angle = 360.0 - angle
+return int(angle)
+
+# 4. ส่วนหัวข้อหลักบนหน้าเว็บ
+st.title("🩺 ระบบแสดงผลสรีระข้อเข่าและส่งต่อข้อมูลอัจฉริยะ")
+st.subheader("นวัตกรรมคัดกรองเชิงรุกเพื่อการส่งต่อการรักษา โดย ทีมวิตามิน C")
+st.markdown("---")
+
+# 5. แถบเมนูด้านซ้ายมือ
+st.sidebar.header("📌 เมนูระบบ")
+menu = st.sidebar.radio(
+"ขั้นตอนการทำงาน:",
+["📊 [01] ลงทะเบียนผู้ป่วย", "📊 [02] ทำการสแกนข้อเข่า / อัปโหลด X-Ray", "📊 [03] AI ประมวลผลและสรุปผล", "📊 [04] สถิติวะบาดวิทยา"]
+)
+
 # =======================================================
-# ขั้นตอนที่ 1: ลงทะเบียนหน้าเว็บ
+# เมนูที่ 1: ลงทะเบียนผู้ป่วย
 # =======================================================
 if menu == "📊 [01] ลงทะเบียนผู้ป่วย":
 st.write("### 📝 บันทึกข้อมูลและลงทะเบียนผู้ป่วย")
@@ -62,13 +60,14 @@ else:
 st.error("⚠️ กรุณากรอกชื่อและเลือกโรงพยาบาลให้ครบถ้วนก่อนกดบันทึกค่ะ")
 
 # =======================================================
-# ขั้นตอนที่ 2: การสแกนข้อเข่า / อัปโหลดไฟล์
+# เมนูที่ 2: ทำการสแกนข้อเข่า / อัปโหลด X-Ray
 # =======================================================
 elif menu == "📊 [02] ทำการสแกนข้อเข่า / อัปโหลด X-Ray":
 if st.session_state.user_data is None:
 st.warning("👈 กรุณาไปที่ขั้นตอนที่ 1 เพื่อกรอกข้อมูลและลงทะเบียนผู้ป่วยก่อนทำการตรวจค่ะ")
 else:
-st.write(f"📋 **ผู้รับการตรวจ:** {st.session_state.user_data['name']} | **โรงพยาบาลปลายทาง:** {st.session_state.user_data['hospital']}")
+u_info = st.session_state.user_data
+st.write(f"📋 **ผู้รับการตรวจ:** {u_info['name']} | **โรงพยาบาลปลายทาง:** {u_info['hospital']}")
 st.markdown("---")
 
 st.write("### 🔎 ส่วนเลือกประเภทการตรวจวิเคราะห์")
@@ -89,12 +88,15 @@ if file_upload is not None:
 uploaded_image = file_upload.getvalue()
 
 if uploaded_image is not None:
-# ประมวลผลภาพด้วย MediaPipe
+mp_pose = mp.solutions.pose
+pose = mp_pose.Pose(static_image_mode=True, min_detection_confidence=0.5)
+mp_drawing = mp.solutions.drawing_utils
+
 cv2_img = cv2.imdecode(np.frombuffer(uploaded_image, np.uint8), cv2.IMREAD_COLOR)
 image_rgb = cv2.cvtColor(cv2_img, cv2.COLOR_BGR2RGB)
 results = pose.process(image_rgb)
 
-knee_angle = 150 # ค่าเริ่มต้นกรณีตรวจจับกระดูกไม่ได้
+knee_angle = 150
 
 if results.pose_landmarks:
 landmarks = results.pose_landmarks.landmark
@@ -104,12 +106,11 @@ ankle = [landmarks[mp_pose.PoseLandmark.RIGHT_ANKLE.value].x, landmarks[mp_pose.
 knee_angle = calculate_angle(hip, knee, ankle)
 mp_drawing.draw_landmarks(image_rgb, results.pose_landmarks, mp_pose.POSE_CONNECTIONS)
 
-# บันทึกผลลัพธ์
 st.session_state.analysis_result = {"angle": knee_angle, "problem": knee_problem, "image": image_rgb}
 st.success("🎉 อัปโหลดและวิเคราะห์ข้อมูลดิบเสร็จสิ้น! กรุณาคลิกขั้นตอนที่ 3 ที่แถบซ้ายมือเพื่อดูผลการรักษา")
 
 # =======================================================
-# ขั้นตอนที่ 3: AI ประมวลผลและสรุปผล
+# เมนูที่ 3: AI ประมวลผลและสรุปผล
 # =======================================================
 elif menu == "📊 [03] AI ประมวลผลและสรุปผล":
 if st.session_state.user_data is None or st.session_state.analysis_result is None:
@@ -120,9 +121,9 @@ res_data = st.session_state.analysis_result
 angle = res_data["angle"]
 prob_type = res_data["problem"]
 
-st.write(f"### 📊 ใบรายงานผลการวิเคราะห์โรคและส่งตัวผู้ป่วยด้วย AI")
+st.write("### 📊 ใบรายงานผลการวิเคราะห์โรคและส่งตัวผู้ป่วยด้วย AI")
 st.write(f"**ชื่อผู้ป่วย:** คุณ {u_data['name']} | **อายุ:** {u_data['age']} ปี")
-st.write(f"**โรงพยาบาลปลายทาง:** {u_data['hospital']} *(ระบบพร้อมส่งต่อรูปภาพและผลวิเคราะห์เข้าสู่ระบบฐานข้อมูลโรงพยาบาลแล้ว)*")
+st.write(f"**โรงพยาบาลปลายทาง:** {u_data['hospital']}")
 st.markdown("---")
 
 st.image(res_data["image"], caption="ภาพหลักฐานการวิเคราะห์โครงสร้างสรีระ", use_container_width=True)
@@ -154,7 +155,7 @@ st.balloons()
 st.success("ส่งข้อมูลสำเร็จ! เจ้าหน้าที่โรงพยาบาลจะติดต่อกลับเพื่อจัดคิวพบแพทย์เฉพาะทางต่อไปค่ะ")
 
 # =======================================================
-# ขั้นตอนที่ 4: สถิติวะบาดวิทยา (อัปเดตย่อหน้าและเพิ่มปุ่มรีเซ็ตแบบสมบูรณ์)
+# เมนูที่ 4: สถิติวะบาดวิทยา (พร้อมปุ่มรีเซ็ตแบบปลอดภัย)
 # =======================================================
 elif menu == "📊 [04] สถิติวะบาดวิทยา":
 st.markdown("### 📊 แดชบอร์ดภาพรวมสถิติสุขภาพชุมชนเชิงรุก")
