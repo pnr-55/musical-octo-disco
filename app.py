@@ -1,19 +1,19 @@
-import streamlit as st
+mport streamlit as st
 import cv2
 import numpy as np
 import mediapipe as mp
 import pandas as pd
 
-st.set_page_config(page_title="Knee AI", layout="centered")
+st.set_page_config(page_title="Knee AI Telemedicine", layout="centered")
 
 if 'user_data' not in st.session_state: st.session_state.user_data = None
 if 'analysis_result' not in st.session_state: st.session_state.analysis_result = None
 
 def calculate_angle(a, b, c):
-a = np.array(a)
-b = np.array(b)
-c = np.array(c)
-r = np.arctan2(c[1]-b[1], c[0]-b[0]) - np.arctan2(a[1]-b[1], a[0]-b[0])
+point_a = np.array(a)
+point_b = np.array(b)
+point_c = np.array(c)
+r = np.arctan2(point_c[1]-point_b[1], point_c[0]-point_b[0]) - np.arctan2(point_a[1]-point_b[1], point_a[0]-point_b[0])
 angle = np.abs(r * 180.0 / np.pi)
 if angle > 180.0: angle = 360 - angle
 return int(angle)
