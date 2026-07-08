@@ -1,99 +1,73 @@
 import streamlit as st
 from PIL import Image, ImageEnhance
 import numpy as np
-import time
 import pandas as pd
+import datetime
 
-# 🎨 1. ตั้งค่าหน้าต่างเว็บ
-st.set_page_config(page_title="Knee AI - NextGen Telemedicine", page_icon="⚡", layout="centered")
+# 🎨 ตั้งค่าหน้าเว็บ
+st.set_page_config(page_title="Knee AI - Telemedicine Pro", layout="wide")
+st.markdown("<h1 style='text-align: center; color: #00f2fe;'>🤖 KNEE-AI: ADVANCED PRO v7.0</h1>", unsafe_allow_html=True)
 
-# 🚀 ส่วนหัว
-st.markdown("<h1 style='text-align: center; color: #00f2fe;'>🤖 KNEE-AI: MULTI-AXIS ALIGNMENT ENGINE</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; color: #a1a1a1; font-family: monospace;'>PROTOTYPE VERSION 6.5 // BY TEAM VITAMIN C</p>", unsafe_allow_html=True)
+# 💾 จัดการ Session
+if 'patients' not in st.session_state: st.session_state.patients = {}
+if 'current_id' not in st.session_state: st.session_state.current_id = None
 
-# 📌 เมนู
-st.sidebar.markdown("<h2 style='color: #00f2fe; text-align: center;'>📡 SYSTEM CORE v6.5</h2>", unsafe_allow_html=True)
-menu = st.sidebar.radio("SELECT INTEL MODE:", [
-    "🧬 [01] PATIENT INFRASTRUCTURE", 
-    "📷 [02] DEEP SCAN & IMAGE ENGINE", 
-    "📊 [03] DIAGNOSTIC QUANTUM MATRIX",
-    "📈 [04] EPIDEMIOLOGY DASHBOARD"
-])
+menu = st.sidebar.radio("SELECT MODE:", ["🧬 [01] ลงทะเบียน/ล็อกอิน", "📷 [02] สแกนเข่า", "📊 [03] ผลลัพธ์และท่ากายภาพ", "📈 [04] ประวัติพัฒนาการ"])
 
-if 'user_data' not in st.session_state:
-    st.session_state.user_data = None
-if 'analysis_result' not in st.session_state:
-    st.session_state.analysis_result = None
-
-hospitals_data = {
-    "ลพบุรี": ["โรงพยาบาลลพบุรี", "โรงพยาบาลพัฒนานิคม", "โรงพยาบาลพระนารายณ์มหาราช"],
-    "กรุงเทพมหานคร": ["โรงพยาบาลศิริราช", "โรงพยาบาลจุฬาลงกรณ์"]
-}
-provinces = sorted(list(hospitals_data.keys()))
-
-# 🧬 MODE 01
-if menu == "🧬 [01] PATIENT INFRASTRUCTURE":
-    st.markdown("### 📝 PATIENT REGISTRATION")
-    with st.form("reg_form"):
-        name = st.text_input("NAME (ชื่อ-นามสกุล):")
-        age = st.number_input("AGE (อายุ):", min_value=0, max_value=120, value=50)
-        selected_province = st.selectbox("PROVINCE:", provinces)
-        hospital = st.selectbox("HOSPITAL:", hospitals_data.get(selected_province, ["รพ. ประจำจังหวัด"]))
-        submit_button = st.form_submit_button("⚡ INITIALIZE")
-        
-    if submit_button and name:
-        st.session_state.user_data = {"name": name, "age": age, "hospital": hospital}
-        st.success(f"ลงทะเบียนคุณ {name} เรียบร้อย!")
-
-# 📸 MODE 02
-elif menu == "📷 [02] DEEP SCAN & IMAGE ENGINE":
-    if st.session_state.user_data is None:
-        st.warning("🚨 กรุณาลงทะเบียนก่อนค่ะ")
-    else:
-        uploaded_file = st.file_uploader("CHOOSE IMAGE:", type=["jpg", "png"])
-        if uploaded_file and st.button("🤖 START ANALYSIS"):
-            # จำลองค่าวิเคราะห์
-            knee_angle = 120 
-            st.session_state.analysis_result = {"angle": knee_angle, "confidence": 95.0}
-            st.success("ประมวลผลเสร็จสิ้น!")
-            # ==========================================
-# 📊 MODE 03: DIAGNOSTIC QUANTUM MATRIX (ฉบับอัปเกรด)
-# ==========================================
-elif menu == "📊 [03] DIAGNOSTIC QUANTUM MATRIX":
-    if st.session_state.analysis_result:
-        res = st.session_state.analysis_result
-        angle = res["angle"]
-        
-        st.markdown("### 📋 AI MEDICAL EVALUATION & RECOMMENDATIONS")
-        
-        # 1. ส่วนเปรียบเทียบ (เปรียบเทียบผลกับค่ามาตรฐาน)
-        st.markdown("#### 📐 KNEE ALIGNMENT COMPARISON")
-        st.write(f"ผลวัดได้: **{angle}°** | เกณฑ์ปกติ: **150° - 170°**")
-        
-        if angle < 130:
-            st.error("🚨 ผลประเมิน: เสี่ยงภาวะขาโก่ง (Bowlegs)")
-            reason = "แนวน้ำหนักตกเข้าด้านในข้อเข่า ทำให้เข่าห่างออกจากกัน"
-            tips = ["ออกกำลังกายเสริมกล้ามเนื้อสะโพก", "หลีกเลี่ยงการนั่งขัดสมาธิ", "พบแพทย์เพื่อตรวจเอกซเรย์"]
-        elif angle <= 160:
-            st.warning("⚠️ ผลประเมิน: เสี่ยงภาวะเข่าชิด (Knock-knees)")
-            reason = "แนวเข่าเบียดชิดกัน ทำให้น้ำหนักลงที่เข่าด้านนอก"
-            tips = ["ยืดกล้ามเนื้อต้นขาด้านนอก", "ควบคุมน้ำหนักเพื่อลดแรงกด", "ปรึกษาแพทย์กายภาพบำบัด"]
+# 🧬 [01] ลงทะเบียน
+if menu == "🧬 [01] ลงทะเบียน/ล็อกอิน":
+    st.subheader("📝 ระบบลงทะเบียนคนไข้")
+    pid = st.text_input("กรอกรหัสคนไข้ของคุณ (หรือตั้งใหม่):")
+    if pid and st.button("เข้าสู่ระบบ"):
+        st.session_state.current_id = pid
+        if pid not in st.session_state.patients:
+            st.session_state.patients[pid] = {"history": [], "data": {}}
+            st.success(f"สร้างโปรไฟล์ใหม่รหัส: {pid}")
         else:
-            st.success("✅ ผลประเมิน: แนวเข่าปกติ (Normal)")
-            reason = "องศาอยู่ในเกณฑ์สุขภาพดี"
-            tips = ["คงความแข็งแรงของกล้ามเนื้อต้นขา", "ออกกำลังกายแบบคาร์ดิโอที่แรงกระแทกต่ำ"]
+            st.success(f"ยินดีต้อนรับกลับมาค่ะ รหัส: {pid}")
 
-        st.info(f"💡 **หลักการอ้างอิง:** {reason}")
-        
-        # 2. คำแนะนำกายภาพบำบัด
-        st.markdown("#### 🏃‍♂️ PHYSICAL THERAPY RECOMMENDATIONS")
-        for tip in tips:
-            st.write(f"- {tip}")
-            
-        # 3. ค้นหาโรงพยาบาล/คลินิกใกล้บ้าน
-        st.markdown("#### 🏥 CLINICS & HOSPITALS NEAR YOU")
-        province = st.session_state.user_data['province']
-        st.write(f"เราแนะนำหน่วยบริการในจังหวัด **{province}** ดังนี้:")
-        st.write(f"👉 **{st.session_state.user_data['hospital']}** (หน่วยบริการหลักที่คุณเลือก)")
-        st.caption("หมายเหตุ: เพื่อผลการวินิจฉัยที่แม่นยำ กรุณาปรึกษาแพทย์เฉพาะทางกระดูกและข้อ")
+    if st.session_state.current_id:
+        with st.form("reg"):
+            weight = st.number_input("น้ำหนัก (kg):", value=60.0)
+            height = st.number_input("ส่วนสูง (cm):", value=160.0)
+            province = st.text_input("จังหวัดของคุณ:")
+            if st.form_submit_button("บันทึกข้อมูล"):
+                bmi = weight / ((height/100)**2)
+                st.session_state.patients[st.session_state.current_id]["data"] = {"bmi": bmi, "province": province}
+                st.write(f"ค่า BMI ของคุณคือ: {bmi:.2f}")
 
+# 📷 [02] สแกนเข่า
+elif menu == "📷 [02] สแกนเข่า":
+    if not st.session_state.current_id: st.warning("กรุณาล็อกอินก่อนค่ะ")
+    else:
+        file = st.file_uploader("อัปโหลดภาพเข่าของคุณ:", type=["jpg", "png"])
+        if file and st.button("วิเคราะห์"):
+            angle = np.random.randint(120, 175) # จำลองค่าองศา
+            date = datetime.date.today().isoformat()
+            res = {"date": date, "angle": angle}
+            st.session_state.patients[st.session_state.current_id]["history"].append(res)
+            st.write(f"ผลการวิเคราะห์: มุมเข่า {angle}°")
+
+# 📊 [03] ผลลัพธ์และคำแนะนำ
+elif menu == "📊 [03] ผลลัพธ์และท่ากายภาพ":
+    if st.session_state.current_id and st.session_state.patients[st.session_state.current_id]["history"]:
+        last = st.session_state.patients[st.session_state.current_id]["history"][-1]
+        st.subheader(f"ผลลัพธ์ล่าสุด: {last['angle']}°")
+        if last['angle'] < 150:
+            st.error("พบภาวะขาโก่ง/เข่าชิด: แนะนำทำกายภาพบำบัด")
+            st.markdown("### 🏃‍♂️ ท่าบริหาร: ยืดกล้ามเนื้อต้นขา")
+            st.write("1. นอนราบ 2. ยกขาขึ้น 3. ค้างไว้ 10 วินาที")
+            prov = st.session_state.patients[st.session_state.current_id]["data"].get("province", "")
+            st.markdown(f"🏥 [ค้นหาคลินิก/รพ. ใน {prov} บน Google Maps](https://www.google.com/maps/search/โรงพยาบาล+ใน+{prov})")
+        else:
+            st.success("แนวเข่าปกติค่ะ")
+
+# 📈 [04] ประวัติ
+elif menu == "📈 [04] ประวัติพัฒนาการ":
+    if st.session_state.current_id:
+        hist = st.session_state.patients[st.session_state.current_id]["history"]
+        df = pd.DataFrame(hist)
+        st.line_chart(df.set_index('date'))
+
+st.sidebar.markdown("---")
+st.sidebar.caption("⚠️ คำเตือน: นี่คือการคัดกรองเบื้องต้น ไม่แทนการวินิจฉัยของแพทย์")
