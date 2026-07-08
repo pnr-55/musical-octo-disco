@@ -48,37 +48,38 @@ elif menu == "📷 [02] สแกนเข่า":
             st.session_state.patients[st.session_state.current_id]["history"].append(res)
             st.write(f"ผลการวิเคราะห์เบื้องต้น: มุมเข่า {angle}°")
 
-# 📊 [03] ผลลัพธ์และคำแนะนำ
+# 📊 [03] ผลลัพธ์และท่ากายภาพ
 elif menu == "📊 [03] ผลลัพธ์และท่ากายภาพ":
     if st.session_state.current_id and st.session_state.patients[st.session_state.current_id]["history"]:
         last = st.session_state.patients[st.session_state.current_id]["history"][-1]
         st.subheader(f"ผลลัพธ์ล่าสุด: {last['angle']}°")
         
-        st.write("---")
-        st.markdown("### การเปรียบเทียบภาพข้อเข่า")
+        # แสดงรูปเปรียบเทียบ
         col1, col2 = st.columns(2)
-        
-        # ตรวจสอบไฟล์ก่อนแสดงผลเพื่อป้องกัน Error
         with col1:
-            if os.path.exists("normal_knee.jpg"):
-                st.image("normal_knee.jpg", caption="มาตรฐานขาปกติ")
-            else:
-                st.warning("ไม่พบไฟล์: normal_knee.jpg")
+            if os.path.exists("normal_knee.jpg"): st.image("normal_knee.jpg", caption="มาตรฐานขาปกติ")
         with col2:
-            if os.path.exists("varus_knee.jpg"):
-                st.image("varus_knee.jpg", caption="ลักษณะขาโก่ง (Varus)")
-            else:
-                st.warning("ไม่พบไฟล์: varus_knee.jpg")
-        st.write("---")
+            if os.path.exists("varus_knee.jpg"): st.image("varus_knee.jpg", caption="ลักษณะขาโก่ง (Varus)")
 
+        st.write("---")
         if last['angle'] < 150:
-            st.error("พบภาวะขาโก่ง/เข่าชิด: แนะนำทำกายภาพบำบัด")
-            st.markdown("### 🏃‍♂️ ท่าบริหาร: ยืดกล้ามเนื้อต้นขา")
-            st.write("1. นอนราบ 2. ยกขาขึ้น 3. ค้างไว้ 10 วินาที")
-            prov = st.session_state.patients[st.session_state.current_id]["data"].get("province", "")
-            st.markdown(f"🏥 [ค้นหาคลินิก/รพ. ใน {prov} บน Google Maps](https://www.google.com/maps/search/โรงพยาบาล+ใน+{prov})")
+            st.error("⚠️ พบภาวะแนวเข่าผิดปกติ: แนะนำปรึกษาแพทย์และทำกายภาพ")
+            
+            # 🏃‍♂️ ตารางท่ากายภาพ
+            st.markdown("### 📋 ตารางท่ากายภาพบำบัด (Knee Rehabilitation)")
+            data = {
+                "ท่าบริหาร": ["ยืดกล้ามเนื้อต้นขา", "กระดกข้อเท้า", "ยกขาตรง"],
+                "วิธีทำ": ["นอนราบ ยืดขาตรง ค้าง 10 วินาที", "กระดกขึ้น-ลง 15 ครั้ง", "เกร็งหน้าขา ยกขาขึ้น 45 องศา"],
+                "ความถี่": ["3 รอบ/วัน", "2 รอบ/วัน", "3 รอบ/วัน"]
+            }
+            st.table(pd.DataFrame(data))
+            
+            # 🏥 ค้นหาคลินิก
+            prov = st.session_state.patients[st.session_state.current_id]["data"].get("province", "กรุงเทพมหานคร")
+            maps_url = f"https://www.google.com/maps/search/คลินิกกายภาพบำบัดใกล้ฉัน+ใน+{prov}"
+            st.markdown(f"🏥 [กดที่นี่เพื่อค้นหาคลินิกกายภาพใกล้ฉันใน {prov}]({maps_url})", unsafe_allow_html=True)
         else:
-            st.success("แนวเข่าปกติค่ะ")
+            st.success("✅ ผลการวิเคราะห์อยู่ในเกณฑ์ปกติค่ะ")
 
 # 📈 [04] ประวัติ
 elif menu == "📈 [04] ประวัติพัฒนาการ":
@@ -89,6 +90,3 @@ elif menu == "📈 [04] ประวัติพัฒนาการ":
             st.line_chart(df.set_index('date'))
         else:
             st.write("ยังไม่มีประวัติการสแกนค่ะ")
-
-st.sidebar.markdown("---")
-st.sidebar.caption("⚠️ คำเตือน: นี่คือการคัดกรองเบื้องต้น ไม่แทนการวินิจฉัยของแพทย์")
