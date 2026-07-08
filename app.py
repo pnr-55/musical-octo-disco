@@ -1,5 +1,4 @@
 import streamlit as st
-import pandas as pd
 
 # 1. ตั้งค่าหน้าเพจ
 st.set_page_config(page_title="Knee AI Innovation", layout="centered")
@@ -27,28 +26,31 @@ elif st.session_state.page == "Scan":
     st.title("📷 2. วิเคราะห์ AI & คณิตศาสตร์")
     file = st.file_uploader("อัปโหลด X-Ray:", type=["jpg", "png"])
     if file and st.button("วิเคราะห์มุมเข่า"):
-        # จำลองค่ามุมที่ AI คำนวณได้
-        angle = 155.0 
+        angle = 155.0  # ค่าจำลองสำหรับการทดสอบ
         st.session_state.analysis = {"angle": angle}
         go_to("Result")
         st.rerun()
 
-# --- หน้าที่ 3: ผลลัพธ์และระดับความรุนแรง ---
+# --- หน้าที่ 3: ผลลัพธ์และคำแนะนำ ---
 elif st.session_state.page == "Result":
     st.title("📊 3. ผลการวิเคราะห์")
     angle = st.session_state.analysis['angle']
     st.metric("มุมข้อเข่า", f"{angle}°")
     
-    # ระบบประเมินระดับความรุนแรง
-    st.subheader("ระดับความรุนแรง (Severity Grading)")
+    st.subheader("ผลการประเมินและคำแนะนำ")
     if angle >= 170:
         st.success("🟢 ระดับปกติ: โครงสร้างกระดูกสมดุล")
+        st.info("คำแนะนำ: ออกกำลังกายสม่ำเสมอและรักษาท่วงท่าการเดินที่ถูกต้อง")
     elif 160 <= angle < 170:
         st.warning("⚠️ ระดับ 1: เริ่มเบี่ยงเบนเล็กน้อย")
-    elif 150 <= angle < 160:
-        st.error("🚨 ระดับ 2: ขาโก่งชัดเจน ควรพบนักกายภาพ")
+        st.write("คำแนะนำ: เริ่มทำกายภาพบำบัดเบื้องต้นเพื่อเสริมความแข็งแรงกล้ามเนื้อรอบเข่า")
+        with st.expander("ดูท่าบริหารกล้ามเนื้อ (แนะนำ)"):
+            st.write("- ท่า Straight Leg Raise (ยกขาตรงขณะนอนหงาย)")
+            st.write("- ท่า Hamstring Stretch (ยืดกล้ามเนื้อต้นขาด้านหลัง)")
     else:
-        st.error("⛔ ระดับ 3: ผิดรูปสูง เสี่ยงข้อเข่าเสื่อมรุนแรง")
+        st.error("🚨 ระดับ 2-3: ขาโก่งชัดเจน/ผิดรูปสูง")
+        st.write("คำแนะนำ: ควรพบแพทย์เฉพาะทางเพื่อรับการวินิจฉัยและทำกายภาพบำบัดภายใต้การดูแลของผู้เชี่ยวชาญ")
+        st.button("📍 ค้นหาคลินิกกายภาพบำบัดใกล้ฉัน")
 
     st.write("---")
     st.subheader("💪 เสริม: คำนวณความแข็งแรง (MRT)")
