@@ -1,5 +1,4 @@
 import streamlit as st
-from PIL import Image, ImageEnhance
 import numpy as np
 import pandas as pd
 import datetime
@@ -46,13 +45,23 @@ elif menu == "📷 [02] สแกนเข่า":
             date = datetime.date.today().isoformat()
             res = {"date": date, "angle": angle}
             st.session_state.patients[st.session_state.current_id]["history"].append(res)
-            st.write(f"ผลการวิเคราะห์: มุมเข่า {angle}°")
+            st.write(f"ผลการวิเคราะห์เบื้องต้น: มุมเข่า {angle}°")
 
 # 📊 [03] ผลลัพธ์และคำแนะนำ
 elif menu == "📊 [03] ผลลัพธ์และท่ากายภาพ":
     if st.session_state.current_id and st.session_state.patients[st.session_state.current_id]["history"]:
         last = st.session_state.patients[st.session_state.current_id]["history"][-1]
         st.subheader(f"ผลลัพธ์ล่าสุด: {last['angle']}°")
+        
+        st.write("---")
+        st.markdown("### การเปรียบเทียบภาพข้อเข่า")
+        col1, col2 = st.columns(2)
+        with col1:
+            st.image("normal_knee.jpg", caption="มาตรฐานขาปกติ")
+        with col2:
+            st.image("varus_knee.jpg", caption="ลักษณะขาโก่ง (Varus)")
+        st.write("---")
+
         if last['angle'] < 150:
             st.error("พบภาวะขาโก่ง/เข่าชิด: แนะนำทำกายภาพบำบัด")
             st.markdown("### 🏃‍♂️ ท่าบริหาร: ยืดกล้ามเนื้อต้นขา")
@@ -66,8 +75,11 @@ elif menu == "📊 [03] ผลลัพธ์และท่ากายภา�
 elif menu == "📈 [04] ประวัติพัฒนาการ":
     if st.session_state.current_id:
         hist = st.session_state.patients[st.session_state.current_id]["history"]
-        df = pd.DataFrame(hist)
-        st.line_chart(df.set_index('date'))
+        if hist:
+            df = pd.DataFrame(hist)
+            st.line_chart(df.set_index('date'))
+        else:
+            st.write("ยังไม่มีประวัติการสแกนค่ะ")
 
 st.sidebar.markdown("---")
 st.sidebar.caption("⚠️ คำเตือน: นี่คือการคัดกรองเบื้องต้น ไม่แทนการวินิจฉัยของแพทย์")
