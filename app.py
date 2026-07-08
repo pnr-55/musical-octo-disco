@@ -1,76 +1,62 @@
 import streamlit as st
 
-st.set_page_config(page_title="Knee AI Pro", page_icon="🩺", layout="centered")
+st.set_page_config(page_title="Knee AI Diagnostic", layout="centered")
 
-# CSS ตกแต่ง
-st.markdown("""
-    <style>
-    .report-box {background-color: #ffffff; padding: 20px; border-radius: 15px; border: 1px solid #dee2e6;}
-    </style>
-    """, unsafe_allow_html=True)
-
-# ระบบจดจำข้อมูล
+# --- ระบบจำข้อมูล ---
 if 'page' not in st.session_state: st.session_state.page = "Register"
 if 'name' not in st.session_state: st.session_state.name = ""
-if 'hospital' not in st.session_state: st.session_state.hospital = "โรงพยาบาลพระนารายณ์"
-if 'angle' not in st.session_state: st.session_state.angle = None
+if 'bmi_status' not in st.session_state: st.session_state.bmi_status = ""
 
-# --- หน้าที่ 1: ลงทะเบียน ---
+def calculate_bmi_risk(w, h):
+    bmi = w / ((h/100) ** 2)
+    if bmi > 25: return f"น้ำหนักเกินเกณฑ์ (BMI: {bmi:.1f}) - เสี่ยงสูงต่อข้อเข่าเสื่อม"
+    return f"น้ำหนักอยู่ในเกณฑ์ปกติ (BMI: {bmi:.1f})"
+
+# --- หน้าที่ 1: ประวัติส่วนตัว (เพิ่มน้ำหนัก/ส่วนสูง) ---
 if st.session_state.page == "Register":
-    st.title("🩺 Knee AI: ประเมินสุขภาพเข่า")
-    st.session_state.name = st.text_input("ชื่อ - นามสกุล:", value=st.session_state.name)
-    st.session_state.hospital = st.selectbox("เลือกโรงพยาบาล:", 
-                                            ["โรงพยาบาลพระนารายณ์", "โรงพยาบาลลพบุรี", "โรงพยาบาลอานันทมหิดล", "อื่นๆ"])
-    if st.button("เข้าสู่การวิเคราะห์ >>"):
+    st.title("🩺 1. ข้อมูลผู้ป่วยและดัชนีมวลกาย")
+    st.session_state.name = st.text_input("ชื่อ - นามสกุล:")
+    w = st.number_input("น้ำหนัก (kg):", value=60.0)
+    h = st.number_input("ส่วนสูง (cm):", value=160.0)
+    st.session_state.hospital = st.selectbox("เลือกโรงพยาบาล:", ["โรงพยาบาลพระนารายณ์", "โรงพยาบาลลพบุรี", "อื่นๆ"])
+    
+    if st.button("บันทึกข้อมูลและวิเคราะห์ความเสี่ยง"):
+        st.session_state.bmi_status = calculate_bmi_risk(w, h)
         st.session_state.page = "Scan"
         st.rerun()
 
-# --- หน้าที่ 2: สแกน ---
+# --- หน้าที่ 2: วิเคราะห์ ---
 elif st.session_state.page == "Scan":
-    st.title("📷 วิเคราะห์ด้วย AI")
-    file = st.file_uploader("อัปโหลดภาพ X-Ray เข่า:", type=["jpg", "png"])
-    if file and st.button("เริ่มประมวลผล"):
-        st.session_state.angle = 155.0
+    st.title("📷 2. วิเคราะห์ด้วย AI")
+    file = st.file_uploader("อัปโหลด X-Ray:", type=["jpg", "png"])
+    if file and st.button("วินิจฉัยโรค"):
+        st.session_state.angle = 155.0 # สมมติผล AI
         st.session_state.page = "Result"
         st.rerun()
 
-# --- หน้าที่ 3: ผลลัพธ์และดาวน์โหลดรายงาน ---
+# --- หน้าที่ 3: ผลวินิจฉัย (เลิศๆ) ---
 elif st.session_state.page == "Result":
-    st.title("📊 สรุปผลการวิเคราะห์")
+    st.title("📊 3. ผลการวินิจฉัยทางการแพทย์")
+    angle = st.session_state.angle
     
-    # ส่วนแสดงผล
-    st.markdown('<div class="report-box">', unsafe_allow_html=True)
-    st.metric("องศาข้อเข่า", f"{st.session_state.angle}°")
-    st.write(f"**ผู้ป่วย:** {st.session_state.name}")
-    st.write(f"**โรงพยาบาลที่เลือก:** {st.session_state.hospital}")
+    # วิเคราะห์โรค
+    diagnosis = "ขาปกติ"
+    if angle < 170: diagnosis = "ขาโก่ง (Bowlegs)"
+    elif angle > 175: diagnosis = "ขาฉิ่ง (Knock-knees)"
     
-    # สร้างเนื้อหาสำหรับรายงาน
-    report_text = f"""
-    --- รายงานสรุปผลการวิเคราะห์สุขภาพเข่า Knee AI ---
-    ชื่อผู้ป่วย: {st.session_state.name}
-    มุมข้อเข่าที่ตรวจพบ: {st.session_state.angle} องศา
-    โรงพยาบาลที่แนะนำให้ปรึกษา: {st.session_state.hospital}
-    ข้อเสนอแนะ: {'จำเป็นต้องพบแพทย์ทันที' if st.session_state.angle < 160 else 'สภาพเข่าปกติ'}
-    --------------------------------------------------
-    """
+    st.subheader(f"ผลการประเมิน: {diagnosis}")
+    st.write(f"**สุขภาพจาก BMI:** {st.session_state.bmi_status}")
     
-    # ปุ่มดาวน์โหลดรายงานเป็นไฟล์ .txt (เอาไปเปิดในมือถือหรือพิมพ์ให้หมอดูได้)
-    st.download_button(
-        label="📥 ดาวน์โหลดสรุปผลเพื่อปรึกษาแพทย์ (.txt)",
-        data=report_text,
-        file_name=f"Report_{st.session_state.name}.txt",
-        mime="text/plain"
-    )
-    st.markdown('</div>', unsafe_allow_html=True)
+    # คำแนะนำตามความเสี่ยง
+    if "ขาโก่ง" in diagnosis or "ขาฉิ่ง" in diagnosis:
+        st.error("🚨 สภาวะข้อเข่าผิดรูป: เสี่ยงต่อข้อเข่าเสื่อม")
+        st.write("คำแนะนำ: ต้องทำกายภาพบำบัดและปรับเปลี่ยนรองเท้าเพื่อลดแรงกระแทก")
+        st.link_button("📍 ค้นหาคลินิกกายภาพใกล้ฉัน", "https://www.google.com/maps/search/คลินิกกายภาพบำบัดใกล้ฉัน")
+    
+    # ปุ่มดาวน์โหลดรายงานให้หมอ
+    report = f"ผลตรวจของ {st.session_state.name}\nการวินิจฉัย: {diagnosis}\nความเสี่ยงจาก BMI: {st.session_state.bmi_status}"
+    st.download_button("📥 ดาวน์โหลดรายงานฉบับสมบูรณ์ให้แพทย์", report, "Medical_Report.txt")
 
-    # ท่าบริหารและคำแนะนำ (ตามเดิม)
-    st.subheader("🏠 ท่าบริหารกล้ามเนื้อที่บ้าน")
-    with st.expander("คลิกดูคำแนะนำ"):
-        st.write("1. **Straight Leg Raise** (ทำ 10 ครั้ง/วัน)")
-        st.write("2. **Hamstring Stretch** (ทำ 10 ครั้ง/วัน)")
-        st.info("💡 นำไฟล์รายงานที่ดาวน์โหลดไปให้คุณหมอดูร่วมกับภาพ X-ray จริงๆ ได้เลยครับ")
-
-    if st.button("เริ่มใหม่"):
-        st.session_state.name = ""
+    if st.button("เริ่มต้นใหม่"):
         st.session_state.page = "Register"
         st.rerun()
