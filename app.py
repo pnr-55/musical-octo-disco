@@ -1,4 +1,4 @@
-mport streamlit as st
+import streamlit as st
 import pandas as pd
 st.set_page_config(page_title="Knee AI", layout="centered")
 if 'user_data' not in st.session_state: st.session_state.user_data = None
