@@ -1,17 +1,15 @@
 import streamlit as st
 
-# ตั้งค่าหน้าเว็บให้สวยงาม
 st.set_page_config(page_title="Knee AI Pro", page_icon="🩺", layout="centered")
 
-# CSS ตกแต่งให้ดูเป็นทางการและทันสมัย
+# CSS ตกแต่ง
 st.markdown("""
     <style>
-    .stApp {background-color: #f8f9fa;}
     .report-box {background-color: #ffffff; padding: 20px; border-radius: 15px; border: 1px solid #dee2e6;}
     </style>
     """, unsafe_allow_html=True)
 
-# ระบบจำข้อมูลไม่ให้หาย (Session State)
+# ระบบจดจำข้อมูล
 if 'page' not in st.session_state: st.session_state.page = "Register"
 if 'name' not in st.session_state: st.session_state.name = ""
 if 'hospital' not in st.session_state: st.session_state.hospital = "โรงพยาบาลพระนารายณ์"
@@ -32,34 +30,45 @@ elif st.session_state.page == "Scan":
     st.title("📷 วิเคราะห์ด้วย AI")
     file = st.file_uploader("อัปโหลดภาพ X-Ray เข่า:", type=["jpg", "png"])
     if file and st.button("เริ่มประมวลผล"):
-        st.session_state.angle = 155.0 # ค่าจำลอง
+        st.session_state.angle = 155.0
         st.session_state.page = "Result"
         st.rerun()
 
-# --- หน้าที่ 3: ผลลัพธ์และคำแนะนำ ---
+# --- หน้าที่ 3: ผลลัพธ์และดาวน์โหลดรายงาน ---
 elif st.session_state.page == "Result":
     st.title("📊 สรุปผลการวิเคราะห์")
     
-    with st.container():
-        st.markdown('<div class="report-box">', unsafe_allow_html=True)
-        st.metric("องศาข้อเข่า", f"{st.session_state.angle}°")
-        st.write(f"**ผู้ป่วย:** {st.session_state.name}")
-        st.write(f"**โรงพยาบาลที่แนะนำ:** {st.session_state.hospital}")
-        
-        if st.session_state.angle < 160:
-            st.error("🚨 ตรวจพบภาวะขาโก่ง: จำเป็นต้องได้รับการดูแลจากผู้เชี่ยวชาญ")
-            st.link_button("📍 ค้นหาคลินิกกายภาพบำบัดใกล้ฉัน", "https://www.google.com/maps/search/คลินิกกายภาพบำบัดใกล้ฉัน")
-        else:
-            st.success("🟢 สภาพเข่าปกติ")
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    st.subheader("🏠 คำแนะนำการบริหารกล้ามเนื้อที่บ้าน")
-    with st.expander("ดูท่าบริหารกล้ามเนื้อรอบเข่า"):
-        st.write("1. **Straight Leg Raise:** นอนหงาย เหยียดขาตรง ยกขาขึ้นช้าๆ ค้างไว้ 5 วินาที (ทำ 10 ครั้ง)")
-        st.write("2. **Hamstring Stretch:** นั่งเก้าอี้ ยืดขาข้างหนึ่งไปข้างหน้า แล้วค่อยๆ โน้มตัวลง (ทำ 10 ครั้ง)")
-        st.write("3. **Wall Squat:** พิงกำแพง ย่อเข่าลงเล็กน้อย ค้างไว้ 10 วินาที")
+    # ส่วนแสดงผล
+    st.markdown('<div class="report-box">', unsafe_allow_html=True)
+    st.metric("องศาข้อเข่า", f"{st.session_state.angle}°")
+    st.write(f"**ผู้ป่วย:** {st.session_state.name}")
+    st.write(f"**โรงพยาบาลที่เลือก:** {st.session_state.hospital}")
     
-    st.info("💡 คำแนะนำ: หากมีอาการปวดรุนแรง ห้ามฝืนทำท่าบริหาร ให้รีบไปพบแพทย์ตามโรงพยาบาลที่เลือกไว้ทันทีครับ")
+    # สร้างเนื้อหาสำหรับรายงาน
+    report_text = f"""
+    --- รายงานสรุปผลการวิเคราะห์สุขภาพเข่า Knee AI ---
+    ชื่อผู้ป่วย: {st.session_state.name}
+    มุมข้อเข่าที่ตรวจพบ: {st.session_state.angle} องศา
+    โรงพยาบาลที่แนะนำให้ปรึกษา: {st.session_state.hospital}
+    ข้อเสนอแนะ: {'จำเป็นต้องพบแพทย์ทันที' if st.session_state.angle < 160 else 'สภาพเข่าปกติ'}
+    --------------------------------------------------
+    """
+    
+    # ปุ่มดาวน์โหลดรายงานเป็นไฟล์ .txt (เอาไปเปิดในมือถือหรือพิมพ์ให้หมอดูได้)
+    st.download_button(
+        label="📥 ดาวน์โหลดสรุปผลเพื่อปรึกษาแพทย์ (.txt)",
+        data=report_text,
+        file_name=f"Report_{st.session_state.name}.txt",
+        mime="text/plain"
+    )
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    # ท่าบริหารและคำแนะนำ (ตามเดิม)
+    st.subheader("🏠 ท่าบริหารกล้ามเนื้อที่บ้าน")
+    with st.expander("คลิกดูคำแนะนำ"):
+        st.write("1. **Straight Leg Raise** (ทำ 10 ครั้ง/วัน)")
+        st.write("2. **Hamstring Stretch** (ทำ 10 ครั้ง/วัน)")
+        st.info("💡 นำไฟล์รายงานที่ดาวน์โหลดไปให้คุณหมอดูร่วมกับภาพ X-ray จริงๆ ได้เลยครับ")
 
     if st.button("เริ่มใหม่"):
         st.session_state.name = ""
