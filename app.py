@@ -20,7 +20,7 @@ if 'user_data' not in st.session_state: st.session_state.user_data = None
 if 'analysis_result' not in st.session_state: st.session_state.analysis_result = None
 
 if menu == "📌 [01] บันทึกประวัติ":
-st.markdown("#### 📝 ข้อมูลผู้ป่วย")
+ st.markdown("#### 📝 ข้อมูลผู้ป่วย")
 with st.form("reg_form"):
  name = st.text_input("ชื่อ - นามสกุล:")
 submit = st.form_submit_button("บันทึก")
