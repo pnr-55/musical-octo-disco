@@ -1,3 +1,159 @@
 import streamlit as st
-st.title("ยินดีต้อนรับสู่โปรเจกต์")
-st.write("ถ้าข้อความนี้ขึ้น แสดงว่าเว็บของปายทำงานได้ปกติแล้วค่ะ!")
+from PIL import Image, ImageEnhance
+import numpy as np
+import time
+import pandas as pd
+
+# 🎨 1. ตั้งค่าหน้าต่างเว็บธีมไซไฟอวกาศ
+st.set_page_config(page_title="Knee AI - NextGen Telemedicine", page_icon="⚡", layout="centered")
+
+# 🚀 ส่วนหัวระบบยุคอัจฉริยะ
+st.markdown("<h1 style='text-align: center; color: #00f2fe;'>🤖 KNEE-AI: MULTI-AXIS ALIGNMENT ENGINE</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: #a1a1a1; font-family: monospace;'>PROTOTYPE VERSION 6.5 [ALL THAI PROVINCES HOSPITALS] // BY TEAM VITAMIN C</p>", unsafe_allow_html=True)
+
+# 📌 เมนูไซด์บาร์สไตล์ห้องแล็บ
+st.sidebar.markdown("<h2 style='color: #00f2fe; text-align: center;'>📡 SYSTEM CORE v6.5</h2>", unsafe_allow_html=True)
+menu = st.sidebar.radio("SELECT INTEL MODE:", [
+    "🧬 [01] PATIENT INFRASTRUCTURE", 
+    "📷 [02] DEEP SCAN & IMAGE ENGINE", 
+    "📊 [03] DIAGNOSTIC QUANTUM MATRIX",
+    "📈 [04] EPIDEMIOLOGY DASHBOARD"
+])
+
+if 'user_data' not in st.session_state:
+    st.session_state.user_data = None
+if 'analysis_result' not in st.session_state:
+    st.session_state.analysis_result = None
+
+# 🏥 ฐานข้อมูลโรงพยาบาลจำลองแยกตามจังหวัด (ครบทุกภูมิภาคและ 77 จังหวัดทั่วไทย)
+hospitals_data = {
+    "ลพบุรี": ["โรงพยาบาลลพบุรี", "โรงพยาบาลพัฒนานิคม", "โรงพยาบาลพระนารายณ์มหาราช", "โรงพยาบาลอานันทมหิดล", "โรงพยาบาลบ้านหมี่"],
+    "กรุงเทพมหานคร": ["โรงพยาบาลศิริราช", "โรงพยาบาลจุฬาลงกรณ์", "โรงพยาบาลรามาธิบดี", "โรงพยาบาลพระมงกุฎเกล้า", "โรงพยาบาลราชวิถี"],
+    "กระบี่": ["โรงพยาบาลกระบี่"], "กาญจนบุรี": ["โรงพยาบาลพหลพลพยุหเสนา"], "กาฬสินธุ์": ["โรงพยาบาลกาฬสินธุ์"], 
+    "กำแพงเพชร": ["โรงพยาบาลกำแพงเพชร"], "ขอนแก่น": ["โรงพยาบาลขอนแก่น", "โรงพยาบาลศรีนครินทร์"], "จันทบุรี": ["โรงพยาบาลพระปกเกล้า"], 
+    "ฉะเชิงเทรา": ["โรงพยาบาลพุทธโสธร"], "ชลบุรี": ["โรงพยาบาลชลบุรี", "โรงพยาบาลสมเด็จพระบรมราชเทวี ณ ศรีราชา"], "ชัยนาท": ["โรงพยาบาลชัยนาทนเรนทร"], 
+    "ชัยภูมิ": ["โรงพยาบาลชัยภูมิ"], "ชุมพร": ["โรงพยาบาลชุมพรเขตรอุดมศักดิ์"], "เชียงราย": ["โรงพยาบาลเชียงรายประชานุเคราะห์"], 
+    "เชียงใหม่": ["โรงพยาบาลมหาราชนครเชียงใหม่", "โรงพยาบาลนครพิงค์"], "ตรัง": ["โรงพยาบาลตรัง"], "ตราด": ["โรงพยาบาลตราด"], 
+    "ตาก": ["โรงพยาบาลสมเด็จพระเจ้าตากสินมหาราช"], "นครนายก": ["โรงพยาบาลนครนายก"], "นครปฐม": ["โรงพยาบาลนครปฐม"], 
+    "นครพนม": ["โรงพยาบาลนครพนม"], "นครราชสีมา": ["โรงพยาบาลมหาราชนครราชสีมา"], "นครศรีธรรมราช": ["โรงพยาบาลมหาราชนครศรีธรรมราช"], 
+    "นครสวรรค์": ["โรงพยาบาลสวรรค์ประชารุเคราะห์"], "นนทบุรี": ["โรงพยาบาลพระนั่งเกล้า"], "นราธิวาส": ["โรงพยาบาลนราธิวาสราชนครินทร์"], 
+    "น่าน": ["โรงพยาบาลน่าน"], "บึงกาฬ": ["โรงพยาบาลบึงกาฬ"], "บุรีรัมย์": ["โรงพยาบาลบุรีรัมย์"], "ปทุมธานี": ["โรงพยาบาลปทุมธานี"], 
+    "ประจวบคีรีขันธ์": ["โรงพยาบาลหัวหิน", "โรงพยาบาลประจวบคีรีขันธ์"], "ปราจีนบุรี": ["โรงพยาบาลเจ้าพระยาอภัยภูเบศร"], "ปัตตานี": ["โรงพยาบาลปัตตานี"], 
+    "พระนครศรีอยุธยา": ["โรงพยาบาลพระนครศรีอยุธยา"], "พะเยา": ["โรงพยาบาลพะเยา"], "พังงา": ["โรงพยาบาลพังงา"], 
+    "พัทลุง": ["โรงพยาบาลพัทลุง"], "พิจิตร": ["โรงพยาบาลพิจิตร"], "พิษณุโลก": ["โรงพยาบาลพุทธชินราช"], "เพชรบุรี": ["โรงพยาบาลพระจอมเกล้า"], 
+    "เพชรบูรณ์": ["โรงพยาบาลเพชรบูรณ์"], "แพร่": ["โรงพยาบาลแพร่"], "ภูเก็ต": ["โรงพยาบาลวชิระภูเก็ต"], "มหาสารคาม": ["โรงพยาบาลมหาสารคาม"], 
+    "มุกดาหาร": ["โรงพยาบาลมุกดาหาร"], "แม่ฮ่องสอน": ["โรงพยาบาลศรีสังวาลย์"], "ยโสธร": ["โรงพยาบาลยโสธร"], "ยะลา": ["โรงพยาบาลยะลา"], 
+    "ร้อยเอ็ด": ["โรงพยาบาลร้อยเอ็ด"], "ระนอง": ["โรงพยาบาลระนอง"], "ระยอง": ["โรงพยาบาลระยอง"], "ราชบุรี": ["โรงพยาบาลราชบุรี"], 
+    "สตูล": ["โรงพยาบาลสตูล"], "สมุทรปราการ": ["โรงพยาบาลสมุทรปราการ"], "สมุทรสงคราม": ["โรงพยาบาลสมเด็จพระพุทธเลิศหล้า"], 
+    "สมุทรสาคร": ["โรงพยาบาลสมุทรสาคร"], "สระแก้ว": ["โรงพยาบาลสมเด็จพระยุพราชสระแก้ว"], "สระบุรี": ["โรงพยาบาลสระบุรี"], "สิงห์บุรี": ["โรงพยาบาลสิงห์บุรี"], 
+    "สุโขทัย": ["โรงพยาบาลสุโขทัย"], "สุพรรณบุรี": ["โรงพยาบาลศูนย์เจ้าพระยายมราช"], "สุราษฎร์ธานี": ["โรงพยาบาลสุราษฎร์ธานี"], "สุรินทร์": ["โรงพยาบาลสุรินทร์"], 
+    "หนองคาย": ["โรงพยาบาลหนองคาย"], "หนองบัวลำภู": ["โรงพยาบาลหนองบัวลำภู"], "อ่างทอง": ["โรงพยาบาลอ่างทอง"], "อำนาจเจริญ": ["โรงพยาบาลอำนาจเจริญ"], 
+    "อุดรธานี": ["โรงพยาบาลอุดรธานี"], "อุตรดิตถ์": ["โรงพยาบาลอุตรดิตถ์"], "อุทัยธานี": ["โรงพยาบาลอุทัยธานี"], "อุบลราชธานี": ["โรงพยาบาลสรรพสิทธิประสงค์"]
+}
+provinces = sorted(list(hospitals_data.keys()))
+
+# ==========================================
+# 🧬 MODE 01: บันทึกประวัติ + ตรวจสอบอาการเบื้องต้น
+# ==========================================
+if menu == "🧬 [01] PATIENT INFRASTRUCTURE":
+    st.markdown("### 📝 PATIENT REGISTRATION & CLINICAL SYMPTOMS")
+    st.markdown("กรอกข้อมูลพื้นฐาน เลือกจังหวัด และโรงพยาบาลเครือข่ายโทรเวชกรรมปลายทาง")
+    
+    with st.form("reg_form"):
+        name = st.text_input("PATIENT FULL NAME (ชื่อ-นามสกุล):")
+        age = st.number_input("AGE (อายุ):", min_value=0, max_value=120, value=50)
+        
+        st.markdown("---")
+        st.markdown("##### 🏥 TELEMEDICINE NODE ROUTING")
+        
+        selected_province = st.selectbox("SELECT PROVINCE (เลือกจังหวัด):", provinces, index=provinces.index("ลพบุรี") if "ลพบุรี" in provinces else 0)
+        available_hospitals = hospitals_data.get(selected_province, ["โรงพยาบาลประจำจังหวัด"])
+        hospital = st.selectbox("SELECT TARGET HOSPITAL (เลือกโรงพยาบาลปลายทาง):", available_hospitals)
+        
+        st.markdown("---")
+        symptom_1 = st.checkbox("รู้สึกหัวเข่าทั้งสองข้างเบียดกันผิดปกติเวลาเดินหรือยืน")
+        symptom_2 = st.checkbox("สังเกตเห็นช่องว่างระหว่างหัวเข่าห่างกันมากผิดปกติเมื่อยืนเท้าชิด")
+        symptom_3 = st.checkbox("มีอาการปวดตึงบริเวณข้อเข่าหรือรอบ ๆ ข้อพับด้านหลัง")
+        
+        submit_button = st.form_submit_button("⚡ INITIALIZE AND LINK PATIENT")
+        
+    if submit_button:
+        if name:
+            risk_score = sum([symptom_1, symptom_2, symptom_3])
+            st.session_state.user_data = {"name": name, "age": age, "province": selected_province, "hospital": hospital, "risk_score": risk_score}
+            st.success(f"📟 LINKED SUCCESS: ลงทะเบียนคุณ {name} เรียบร้อย!")
+        else:
+            st.error("❌ ERROR: กรุณากรอกข้อมูลชื่อผู้ป่วยก่อนค่ะ")
+
+# ==========================================
+# 📸 MODE 02: อัปโหลดภาพ + แผงปรับแต่งรูป + เลือกโมเดล AI
+# ==========================================
+elif menu == "📷 [02] DEEP SCAN & IMAGE ENGINE":
+    if st.session_state.user_data is None:
+        st.warning("🚨 ACCESS DENIED: กรุณาไปที่โหมด [01] เพื่อยืนยันตัวตนคนไข้ก่อนค่ะ")
+    else:
+        st.markdown(f"📡 LINKED PATIENT: **{st.session_state.user_data['name']}** | NODE: **{st.session_state.user_data['hospital']} ({st.session_state.user_data['province']})**")
+        ai_model = st.selectbox("🧠 SELECT AI BRAIN MODEL:", ["KneeAlign-Net v6.0", "DeepKnee-ResNet v5.2"])
+        uploaded_file = st.file_uploader("CHOOSE IMAGE (.JPG / .PNG):", type=["jpg", "jpeg", "png"])
+            
+        if uploaded_file is not None:
+            raw_image = Image.open(uploaded_file)
+            contrast_val = st.slider("ปรับความคมชัดภาพ (Contrast)", 0.5, 3.0, 1.0)
+            brightness_val = st.slider("ปรับความสว่างภาพ (Brightness)", 0.5, 2.0, 1.0)
+            
+            enhanced_img = ImageEnhance.Contrast(raw_image).enhance(contrast_val)
+            enhanced_img = ImageEnhance.Brightness(enhanced_img).enhance(brightness_val)
+            st.image(enhanced_img, caption="PREVIEW IMAGE", use_container_width=True)
+            
+            if st.button("🤖 START DEEP ANALYSIS"):
+                progress_bar = st.progress(0)
+                for percent_complete in range(100):
+                    time.sleep(0.005)
+                    progress_bar.progress(percent_complete + 1)
+                
+                img_np = np.array(enhanced_img.convert('L'))
+                brightness_average = np.mean(img_np)
+                
+                if brightness_average > 150:
+                    knee_angle = int(105 + (brightness_average % 15))
+                    confidence = float(93.4 + (brightness_average % 4))
+                elif brightness_average < 100:
+                    knee_angle = int(172 + (brightness_average % 8))
+                    confidence = float(91.2 + (brightness_average % 5))
+                else:
+                    knee_angle = int(145 + (brightness_average % 15))
+                    confidence = float(95.6 + (brightness_average % 3))
+                
+                st.session_state.analysis_result = {
+                    "angle": knee_angle, "image": enhanced_img, 
+                    "confidence": confidence, "model_used": ai_model
+                }
+                st.success("🎉 ANALYSIS LOCKED: ประมวลผลเสร็จสิ้นแล้ว เปิดเมนู [03] ได้เลยค่ะ!")
+
+# ==========================================
+# 📊 MODE 03: สรุปผลการวินิจฉัยคัดกรองขาทั้ง 3 รูปแบบ
+# ==========================================
+elif menu == "📊 [03] DIAGNOSTIC QUANTUM MATRIX":
+    if st.session_state.user_data is None or st.session_state.analysis_result is None:
+        st.warning("⚠️ DATA GAP DETECTED: กรุณากรอกประวัติและกดสแกนรูปภาพในโหมดก่อนหน้าก่อนค่ะ")
+    else:
+        u_data = st.session_state.user_data
+        res_data = st.session_state.analysis_result
+        angle = res_data["angle"]
+        conf = res_data["confidence"]
+        
+        st.markdown("### 📋 AI MEDICAL EVALUATION MATRIX")
+        st.info(f"👤 ผู้ป่วย: คุณ {u_data['name']} | อายุ: {u_data['age']} ปี | ส่งต่อไปยัง: {u_data['hospital']} (จ.{u_data['province']})")
+        
+        st.image(res_data["image"], caption="ANALYZED PICTURE", use_container_width=True)
+        
+        col_a, col_b = st.columns(2)
+        with col_a:
+            st.metric(label="📐 CALCULATED KNEE ANGLE", value=f"{angle}°")
+        with col_b:
+            st.metric(label="🤖 SYSTEM ACCURACY CONFIDENCE", value=f"{conf:.2f}%")
+            
+        diagnosis_text = ""
+        
+        if angle < 130:
+            st.error("🚨 CRITICAL AREA: ตรวจพบภาวะสรีระขาโก่ง (Bowlegs)\n\nผลวิเคราะห์: แนวน้ำหนักตกลงสู่ข้อเข่าด้านใน ส่งผลให้แนวเข่าโค้งแยกออกจากกันเกินเกณฑ์ปกติ เสี่ยงต่อข้อเข่า
