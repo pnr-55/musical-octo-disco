@@ -2,6 +2,7 @@ import streamlit as st
 import numpy as np
 import pandas as pd
 import datetime
+import os
 
 # 🎨 ตั้งค่าหน้าเว็บ
 st.set_page_config(page_title="Knee AI - Telemedicine Pro", layout="wide")
@@ -41,7 +42,7 @@ elif menu == "📷 [02] สแกนเข่า":
     else:
         file = st.file_uploader("อัปโหลดภาพเข่าของคุณ:", type=["jpg", "png"])
         if file and st.button("วิเคราะห์"):
-            angle = np.random.randint(120, 175) # จำลองค่าองศา
+            angle = np.random.randint(120, 175)
             date = datetime.date.today().isoformat()
             res = {"date": date, "angle": angle}
             st.session_state.patients[st.session_state.current_id]["history"].append(res)
@@ -56,10 +57,18 @@ elif menu == "📊 [03] ผลลัพธ์และท่ากายภา�
         st.write("---")
         st.markdown("### การเปรียบเทียบภาพข้อเข่า")
         col1, col2 = st.columns(2)
+        
+        # ตรวจสอบไฟล์ก่อนแสดงผลเพื่อป้องกัน Error
         with col1:
-            st.image("normal_knee.jpg", caption="มาตรฐานขาปกติ")
+            if os.path.exists("normal_knee.jpg"):
+                st.image("normal_knee.jpg", caption="มาตรฐานขาปกติ")
+            else:
+                st.warning("ไม่พบไฟล์: normal_knee.jpg")
         with col2:
-            st.image("varus_knee.jpg", caption="ลักษณะขาโก่ง (Varus)")
+            if os.path.exists("varus_knee.jpg"):
+                st.image("varus_knee.jpg", caption="ลักษณะขาโก่ง (Varus)")
+            else:
+                st.warning("ไม่พบไฟล์: varus_knee.jpg")
         st.write("---")
 
         if last['angle'] < 150:
