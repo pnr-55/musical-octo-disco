@@ -6,7 +6,7 @@ st.title("🩺 Knee AI Telemedicine")
 menu = st.sidebar.radio("เมนู:", ["1. ลงทะเบียน", "2. สแกน", "3. สรุปผล", "4. สถิติ", "5. MRT"])
 if menu == "1. ลงทะเบียน":
 name = st.text_input("ชื่อของคุณ")
-hospital == st.selectbox("โรงพยาบาล", ["รพ.ลพบุรี", "รพ.พัฒนานิคม"])
+hospital = st.selectbox("โรงพยาบาล", ["รพ.ลพบุรี", "รพ.พัฒนานิคม"])
 if st.button("บันทึกข้อมูล"): st.session_state.user_data = {"name": name, "hospital": hospital}
 elif menu == "2. สแกน":
 file = st.file_uploader("เลือกไฟล์ X-Ray", type=["jpg", "png"])
