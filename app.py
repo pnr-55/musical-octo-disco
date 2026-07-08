@@ -1,28 +1,20 @@
 import streamlit as st
-import pandas as pd  # <--- พี่เพิ่มตรงนี้ให้แล้วครับ
+import pandas as pd
 
 st.set_page_config(page_title="Knee AI Diagnostic", layout="centered")
 
 # --- ระบบจำข้อมูล ---
 if 'page' not in st.session_state: st.session_state.page = "Register"
 if 'name' not in st.session_state: st.session_state.name = ""
-if 'bmi_status' not in st.session_state: st.session_state.bmi_status = ""
-
-def calculate_bmi_risk(w, h):
-    bmi = w / ((h/100) ** 2)
-    if bmi > 25: return f"น้ำหนักเกินเกณฑ์ (BMI: {bmi:.1f}) - เสี่ยงสูงต่อข้อเข่าเสื่อม"
-    return f"น้ำหนักอยู่ในเกณฑ์ปกติ (BMI: {bmi:.1f})"
 
 # --- หน้าที่ 1: ลงทะเบียน ---
 if st.session_state.page == "Register":
-    st.title("🩺 1. ข้อมูลผู้ป่วยและดัชนีมวลกาย")
+    st.title("🩺 1. ข้อมูลผู้ป่วย")
     st.session_state.name = st.text_input("ชื่อ - นามสกุล:")
     w = st.number_input("น้ำหนัก (kg):", value=60.0)
     h = st.number_input("ส่วนสูง (cm):", value=160.0)
-    st.session_state.hospital = st.selectbox("เลือกโรงพยาบาล:", ["โรงพยาบาลพระนารายณ์", "โรงพยาบาลลพบุรี", "อื่นๆ"])
-    
-    if st.button("บันทึกข้อมูลและวิเคราะห์ความเสี่ยง"):
-        st.session_state.bmi_status = calculate_bmi_risk(w, h)
+    if st.button("วิเคราะห์"):
+        st.session_state.bmi = w / ((h/100) ** 2)
         st.session_state.page = "Scan"
         st.rerun()
 
@@ -31,36 +23,31 @@ elif st.session_state.page == "Scan":
     st.title("📷 2. วิเคราะห์ด้วย AI")
     file = st.file_uploader("อัปโหลด X-Ray:", type=["jpg", "png"])
     if file and st.button("วินิจฉัยโรค"):
-        st.session_state.angle = 155.0
+        st.session_state.angle = 155.0  # สมมติผลที่ได้จาก AI
         st.session_state.page = "Result"
         st.rerun()
 
-# --- หน้าที่ 3: ผลวินิจฉัย ---
+# --- หน้าที่ 3: ผลเปรียบเทียบ (เปรียบเทียบให้เห็นชัดๆ) ---
 elif st.session_state.page == "Result":
-    st.title("📊 3. ผลการวินิจฉัยทางการแพทย์")
+    st.title("📊 3. ผลการวินิจฉัยเปรียบเทียบ")
     angle = st.session_state.angle
+    norm_min, norm_max = 170, 175
     
-    diagnosis = "ขาปกติ"
-    if angle < 170: diagnosis = "ขาโก่ง (Bowlegs)"
-    elif angle > 175: diagnosis = "ขาฉิ่ง (Knock-knees)"
-    
-    st.subheader(f"ผลการประเมิน: {diagnosis}")
-    st.write(f"**สุขภาพจาก BMI:** {st.session_state.bmi_status}")
-    
-    # ตารางอ้างอิง
-    st.subheader("📋 ตารางเกณฑ์อ้างอิงทางการแพทย์")
-    data = {
-        "ระดับความผิดปกติ": ["ปกติ", "ขาโก่งเล็กน้อย", "ขาโก่ง/ฉิ่งชัดเจน"],
-        "ช่วงมุม (องศา)": ["170 - 175", "160 - 169", "< 160 หรือ > 175"]
+    # สรุปผล
+    if norm_min <= angle <= norm_max:
+        st.success(f"✅ เข่าปกติ (มุม {angle}° อยู่ในเกณฑ์ {norm_min}-{norm_max}°)")
+    else:
+        diff = abs(angle - 172.5) # ค่าเฉลี่ยมาตรฐาน
+        status = "ขาโก่ง" if angle < norm_min else "ขาฉิ่ง"
+        st.error(f"🚨 ผิดปกติ: พบภาวะ{status} (มุม {angle}° เบี่ยงเบนจากค่าปกติ {diff:.1f}°)")
+
+    # ตารางเปรียบเทียบให้เห็นภาพ
+    st.subheader("📋 ตารางเปรียบเทียบค่ามาตรฐาน")
+    comparison = {
+        "สถานะ": ["ปกติ", "ของคุณ"],
+        "มุมข้อเข่า": ["170 - 175°", f"{angle}°"]
     }
-    st.table(pd.DataFrame(data))
-    
-    if "ขาโก่ง" in diagnosis or "ขาฉิ่ง" in diagnosis:
-        st.error("🚨 สภาวะข้อเข่าผิดรูป: เสี่ยงต่อข้อเข่าเสื่อม")
-        st.link_button("📍 ค้นหาคลินิกกายภาพใกล้ฉัน", "https://www.google.com/maps/search/คลินิกกายภาพบำบัดใกล้ฉัน")
-    
-    report = f"ผลตรวจของ {st.session_state.name}\nการวินิจฉัย: {diagnosis}\nความเสี่ยงจาก BMI: {st.session_state.bmi_status}"
-    st.download_button("📥 ดาวน์โหลดรายงานฉบับสมบูรณ์ให้แพทย์", report, "Medical_Report.txt")
+    st.table(pd.DataFrame(comparison))
 
     if st.button("เริ่มต้นใหม่"):
         st.session_state.page = "Register"
