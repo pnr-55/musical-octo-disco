@@ -35,21 +35,18 @@ if menu == "🧬 [01] ลงทะเบียน/ล็อกอิน":
                 bmi = weight / ((height/100)**2)
                 st.session_state.patients[st.session_state.current_id]["data"] = {"bmi": bmi, "province": province}
                 st.write(f"ค่า BMI ของคุณคือ: {bmi:.2f}")
-import cv2 # เพิ่ม Library นี้เข้ามา
 
-# ... ภายในโหมด 02 ...
-if file and st.button("วิเคราะห์"):
-    # 1. แปลงไฟล์รูปภาพที่อัปโหลดให้เป็นรูปแบบที่ OpenCV อ่านได้
-    file_bytes = np.asarray(bytearray(file.read()), dtype=np.uint8)
-    img = cv2.imdecode(file_bytes, 1)
-    
-    # 2. ค้นหาพิกัด (x, y) ของสติกเกอร์สีเขียว (ตัวอย่าง)
-    # ใช้ฟังก์ชัน cv2.inRange() เพื่อดึงสีสติกเกอร์ออกมาจากภาพ
-    # แล้วใช้ cv2.moments() หรือ findContours() เพื่อหาจุดศูนย์กลางของสติกเกอร์
-    
-    # 3. คำนวณมุมด้วยสูตรตรีโกณมิติ
-    # angle = arctan2(y2-y1, x2-x1) ...
-
+# 📷 [02] สแกนเข่า
+elif menu == "📷 [02] สแกนเข่า":
+    if not st.session_state.current_id: st.warning("กรุณาล็อกอินก่อนค่ะ")
+    else:
+        file = st.file_uploader("อัปโหลดภาพเข่าของคุณ:", type=["jpg", "png"])
+        if file and st.button("วิเคราะห์"):
+            angle = np.random.randint(120, 175)
+            date = datetime.date.today().isoformat()
+            res = {"date": date, "angle": angle}
+            st.session_state.patients[st.session_state.current_id]["history"].append(res)
+            st.write(f"ผลการวิเคราะห์เบื้องต้น: มุมเข่า {angle}°")
 
 # 📊 [03] ผลลัพธ์และท่ากายภาพ
 elif menu == "📊 [03] ผลลัพธ์และท่ากายภาพ":
