@@ -1,14 +1,10 @@
-import sys
-try: import cv2
-except ImportError:
-    st.error("ระบบกำลังติดตั้ง Library กรุณารอ 1 นาทีแล้วรีเฟรช")
-# ตั้งค่า MediaPipe
-mp_pose = mp.solutions.pose
-pose = mp_pose.Pose()
-
-st.set_page_config(page_title="Knee AI - Smart Scan", layout="wide")
-st.title("🤖 Knee AI: ระบบวิเคราะห์เข่าอัจฉริยะ")
-
+import streamlit as st
+import pandas as pd
+import numpy as np
+import cv2
+import mediapipe as mp
+import datetime
+import os
 # ฟังก์ชันคำนวณมุม
 def calculate_angle(a, b, c):
     a = np.array(a); b = np.array(b); c = np.array(c)
