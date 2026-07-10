@@ -1,43 +1,40 @@
 import streamlit as st
 import pandas as pd
 
-st.set_page_config(page_title="OrthopedAI Workflow", layout="centered")
+st.set_page_config(page_title="OrthopedAI - Final Version", layout="centered")
 st.title("🤖 OrthopedAI: ระบบประเมินสุขภาพเข่า")
 
 # 1. รับข้อมูล
-st.header("1. รับข้อมูลผู้ใช้งาน")
+st.header("1. ข้อมูลผู้ใช้งาน")
 with st.form("user_data"):
     name = st.text_input("ชื่อ-นามสกุล")
     weight = st.number_input("น้ำหนัก (kg)", 0.0)
     height = st.number_input("ส่วนสูง (cm)", 0.0)
-    hospital = st.selectbox("เลือกโรงพยาบาล", ["รพ.พระนารายณ์", "รพ.พัฒนานิคม"])
+    province = st.text_input("จังหวัดที่ท่านอาศัยอยู่") # เปลี่ยนจากเลือก รพ. เป็นจังหวัด
     
-    # เพิ่มส่วนอัปโหลดภาพที่นี่
-    uploaded_file = st.file_uploader("3. อัปโหลดภาพถ่ายเข่า (ตาม Workflow)", type=["jpg", "png"])
-    
-    submitted = st.form_submit_button("คำนวณและประเมินผล")
+    uploaded_file = st.file_uploader("3. อัปโหลดภาพถ่ายเข่า", type=["jpg", "png"])
+    submitted = st.form_submit_button("ประเมินผล")
 
 if submitted:
-    # 2. คำนวณ BMI
+    # 2. BMI
     bmi = weight / ((height/100)**2)
     st.subheader("2. ผล BMI")
-    st.write(f"ค่า BMI ของคุณคือ: {bmi:.2f}")
+    st.write(f"ค่า BMI: {bmi:.2f}")
 
-    # 3-5. วิเคราะห์ภาพ
-    st.header("3-5. วิเคราะห์ด้วย AI และคณิตศาสตร์")
+    # 3-5. วิเคราะห์
+    st.header("3-5. ผลการวิเคราะห์")
     if uploaded_file is not None:
-        st.image(uploaded_file, caption="ภาพที่อัปโหลด", use_container_width=True)
-        st.info("กำลังประมวลผล Computer Vision และคำนวณมุมความเบี่ยงเบน...")
-        angle = 165 # ค่าจำลองการคำนวณ
+        st.image(uploaded_file, caption="ภาพของคุณ", use_container_width=True)
+        angle = 165 # จำลองค่าการคำนวณ
         st.write(f"มุมความเบี่ยงเบนของขา: {angle}°")
+        
+        # 6. ประเมินผลและแนะนำ
+        st.header("6. ผลสรุปและการรักษา")
+        if angle < 170:
+            st.error("⚠️ พบความเสี่ยงเข่าโก่ง")
+            st.write("📋 **คำแนะนำรักษาเบื้องต้น:** ทำท่ากายภาพ 'Knee Extension' (เหยียดเข่า) วันละ 3 เซต")
+            st.write(f"🏥 **คลินิกกายภาพใกล้บ้านใน จ.{province}:** แนะนำ 'คลินิกกายภาพบำบัด{province}' หรือติดต่อรพ.ประจำจังหวัด{province}")
+        else:
+            st.success("✅ เข่าอยู่ในเกณฑ์ปกติ - แนะนำออกกำลังกายสม่ำเสมอ")
     else:
-        st.warning("กรุณาอัปโหลดภาพก่อนประเมินผลค่ะ")
-        angle = 180
-
-    # 6. ประเมินผล
-    st.header("6. ประเมินผลและส่งต่อ")
-    if angle < 170:
-        st.error("⚠️ พบความเสี่ยงเข่าโก่ง")
-        st.write(f"ระบบส่งข้อมูลของคุณไปยัง {hospital} เรียบร้อยแล้ว")
-    else:
-        st.success("✅ เข่าอยู่ในเกณฑ์ปกติ")
+        st.warning("กรุณาอัปโหลดภาพก่อนค่ะ")
