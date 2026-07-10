@@ -23,7 +23,8 @@ if submitted:
     st.header("3-5. ผลการวิเคราะห์")
     if uploaded_file is not None:
         st.image(uploaded_file, caption="ภาพของคุณ", use_container_width=True)
-        angle = random.randint(155, 175) 
+       angle = random.randint(155, 175) 
+
         st.write(f"มุมความเบี่ยงเบนของขา: {angle}°")
         st.header("6. ผลสรุปและการรักษา")
         if angle < 170:
