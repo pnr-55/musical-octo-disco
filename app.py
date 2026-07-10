@@ -1,7 +1,4 @@
- import streamlit as st
-import pandas as pd
-import random
-
+ import 
 # การตั้งค่าหน้าเว็บ
 st.set_page_config(page_title="OrthopedAI - Final", layout="centered")
 st.title("🤖 OrthopedAI: ระบบประเมินสุขภาพเข่า")
