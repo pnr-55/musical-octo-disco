@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import cv2 
+import imageio.v3 as iio # ใช้ตัวนี้แทน cv2 เพื่อตัดปัญหา Error
 import mediapipe as mp
 import datetime
 import os
@@ -10,8 +10,8 @@ import os
 mp_pose = mp.solutions.pose
 pose = mp_pose.Pose(static_image_mode=True, min_detection_confidence=0.5)
 
-st.set_page_config(page_title="Knee AI - Professional", layout="wide")
-st.title("🤖 Knee AI: ระบบวิเคราะห์เข่าอัตโนมัติ")
+st.set_page_config(page_title="Knee AI - Smart Scan", layout="wide")
+st.title("🤖 Knee AI: ระบบวิเคราะห์เข่าอัจฉริยะ")
 
 # ฟังก์ชันคำนวณมุม
 def calculate_angle(a, b, c):
@@ -21,14 +21,14 @@ def calculate_angle(a, b, c):
     if angle > 180.0: angle = 360 - angle
     return angle
 
-# จัดการข้อมูล
+# จัดการข้อมูลคนไข้
 DB_FILE = "patient_data.csv"
 if os.path.exists(DB_FILE): 
     df = pd.read_csv(DB_FILE)
 else: 
     df = pd.DataFrame(columns=["id", "date", "angle"])
 
-# ส่วนการทำงานหลัก
+# ส่วนล็อกอินและทำงานหลัก
 uid = st.sidebar.text_input("🔑 รหัสประจำตัวคนไข้ (4 หลัก):")
 
 if uid:
@@ -36,10 +36,9 @@ if uid:
     uploaded_file = st.file_uploader("อัปโหลดรูปขา (เห็นสะโพก-เข่า-ข้อเท้า):", type=["jpg", "png"])
     
     if uploaded_file:
-        file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
-        image = cv2.imdecode(file_bytes, 1)
-        image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        results = pose.process(image_rgb)
+        # ใช้ imageio อ่านภาพแทนเพื่อความเสถียรบนระบบ Cloud
+        image = iio.imread(uploaded_file)
+        results = pose.process(image)
         
         if results.pose_landmarks:
             lms = results.pose_landmarks.landmark
@@ -48,8 +47,8 @@ if uid:
             ankle = [lms[27].x, lms[27].y]
             
             angle = calculate_angle(hip, knee, ankle)
-            st.image(image_rgb, caption="AI วิเคราะห์จุดข้อต่อเรียบร้อย", use_container_width=True)
-            st.metric("องศาที่วิเคราะห์ได้", f"{round(angle, 2)}°")
+            st.image(image, caption="AI ตรวจพบจุดข้อต่อเรียบร้อย", use_container_width=True)
+            st.metric("องศาเข่าที่วิเคราะห์ได้", f"{round(angle, 2)}°")
             
             if st.button("บันทึกผลการวิเคราะห์"):
                 new_data = pd.DataFrame([{"id": uid, "date": str(datetime.date.today()), "angle": round(angle, 2)}])
