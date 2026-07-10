@@ -1,65 +1,68 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
+import cv2
+import mediapipe as mp
 import datetime
 import os
 
-st.set_page_config(page_title="Knee AI - Pro Version", layout="centered")
-st.title("🩺 Knee AI: ระบบวิเคราะห์เข่าอัจฉริยะ")
+# ตั้งค่า MediaPipe
+mp_pose = mp.solutions.pose
+pose = mp_pose.Pose()
 
+st.set_page_config(page_title="Knee AI - Smart Scan", layout="wide")
+st.title("🤖 Knee AI: ระบบวิเคราะห์เข่าอัจฉริยะ")
+
+# ฟังก์ชันคำนวณมุม
+def calculate_angle(a, b, c):
+    a = np.array(a); b = np.array(b); c = np.array(c)
+    radians = np.arctan2(c[1]-b[1], c[0]-b[0]) - np.arctan2(a[1]-b[1], a[0]-b[0])
+    angle = np.abs(radians*180.0/np.pi)
+    if angle > 180.0: angle = 360 - angle
+    return angle
+
+# จัดการข้อมูล
 DB_FILE = "patient_data.csv"
-def load_data():
-    if os.path.exists(DB_FILE): return pd.read_csv(DB_FILE)
-    return pd.DataFrame(columns=["id", "name", "weight", "height", "prov", "date", "angle"])
+if os.path.exists(DB_FILE): df = pd.read_csv(DB_FILE)
+else: df = pd.DataFrame(columns=["id", "date", "angle"])
 
-# 🔑 Sidebar ล็อกอิน
+# 🔑 Sidebar
 uid = st.sidebar.text_input("🔑 รหัสประจำตัวคนไข้ (4 หลัก):")
 
 if uid:
-    df = load_data()
-    user_info = df[df['id'] == uid]
+    st.sidebar.success(f"ผู้ใช้งาน: {uid}")
     
-    # 📝 ข้อมูลคนไข้
-    with st.expander("👤 ข้อมูลส่วนตัว (คลิกเพื่อแก้ไข)"):
-        with st.form("profile_form"):
-            name = st.text_input("ชื่อ-นามสกุล", value=user_info['name'].iloc[-1] if not user_info.empty else "")
-            col1, col2 = st.columns(2)
-            weight = col1.number_input("น้ำหนัก (kg)", value=float(user_info['weight'].iloc[-1]) if not user_info.empty else 60.0)
-            height = col2.number_input("ส่วนสูง (cm)", value=float(user_info['height'].iloc[-1]) if not user_info.empty else 160.0)
-            prov = st.text_input("จังหวัด", value=user_info['prov'].iloc[-1] if not user_info.empty else "")
-            submit_p = st.form_submit_button("บันทึกข้อมูล")
-
-    # 📷 ส่วนการอัปโหลดภาพเพื่อวิเคราะห์
-    st.header("📷 อัปโหลดรูปภาพเพื่อวิเคราะห์")
-    uploaded_file = st.file_uploader("เลือกไฟล์รูปภาพเข่าของคุณ (JPG/PNG):", type=["jpg", "png"])
+    # 📷 ส่วนการอัปโหลดและวิเคราะห์
+    st.header("📸 วิเคราะห์องศาเข่าด้วย AI")
+    uploaded_file = st.file_uploader("อัปโหลดรูปขา (เห็นสะโพก-เข่า-ข้อเท้า):", type=["jpg", "png"])
     
-    if uploaded_file is not None:
-        st.image(uploaded_file, caption="รูปภาพที่อัปโหลด", use_container_width=True)
-        angle = st.number_input("กรอกองศาเข่าที่วัดได้ (จากการวิเคราะห์ในรูป):", min_value=0, max_value=180)
+    if uploaded_file:
+        file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
+        image = cv2.imdecode(file_bytes, 1)
+        results = pose.process(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
         
-        if st.button("ประมวลผลและออกใบรับรอง"):
-            new_row = {"id": uid, "name": name, "weight": weight, "height": height, "prov": prov, 
-                       "date": str(datetime.date.today()), "angle": angle}
-            df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
-            df.to_csv(DB_FILE, index=False)
-            st.success("บันทึกข้อมูลและวิเคราะห์เรียบร้อย!")
+        if results.pose_landmarks:
+            lms = results.pose_landmarks.landmark
+            hip = [lms[mp_pose.PoseLandmark.LEFT_HIP.value].x, lms[mp_pose.PoseLandmark.LEFT_HIP.value].y]
+            knee = [lms[mp_pose.PoseLandmark.LEFT_KNEE.value].x, lms[mp_pose.PoseLandmark.LEFT_KNEE.value].y]
+            ankle = [lms[mp_pose.PoseLandmark.LEFT_ANKLE.value].x, lms[mp_pose.PoseLandmark.LEFT_ANKLE.value].y]
+            
+            angle = calculate_angle(hip, knee, ankle)
+            st.image(image, caption="รูปที่ AI วิเคราะห์", use_container_width=True)
+            st.metric("องศาที่วิเคราะห์ได้", f"{round(angle, 2)}°")
+            
+            if st.button("บันทึกผลการวิเคราะห์"):
+                new_data = pd.DataFrame([{"id": uid, "date": str(datetime.date.today()), "angle": round(angle, 2)}])
+                df = pd.concat([df, new_data], ignore_index=True)
+                df.to_csv(DB_FILE, index=False)
+                st.success("บันทึกข้อมูลเรียบร้อย!")
+        else:
+            st.error("AI หาข้อต่อไม่เจอค่ะ! ลองถ่ายรูปให้เห็นตัวเต็มตั้งแต่สะโพกถึงข้อเท้านะคะ")
 
-            # 📜 ใบรับรองผล
-            st.markdown("---")
-            st.subheader("📜 ใบรับรองผลการคัดกรองเบื้องต้น")
-            report = f"""
-            **ชื่อ:** {name} | **วันที่:** {datetime.date.today()}
-            **ผลการวิเคราะห์:** มุมเข่า {angle}° 
-            **คำแนะนำ:** {'พบความผิดปกติ ควรพบแพทย์กายภาพ' if angle < 160 else 'แนวเข่าปกติ สุขภาพดีเยี่ยม'}
-            **โรงพยาบาล/คลินิกแนะนำใน {prov}:** 
-            https://www.google.com/maps/search/โรงพยาบาลใกล้ฉัน+ใน+{prov}
-            """
-            st.info(report)
-            st.download_button("📥 ดาวน์โหลดใบรับรองผล (.txt)", report, file_name="Medical_Report.txt")
-
-    # 📈 กราฟประวัติ
+    # 📈 ประวัติ
     st.header("📈 ประวัติพัฒนาการ")
-    user_history = df[df['id'] == uid]
-    if not user_history.empty:
-        st.line_chart(user_history.set_index('date')['angle'])
+    user_hist = df[df['id'] == uid]
+    if not user_hist.empty:
+        st.line_chart(user_hist.set_index('date')['angle'])
 else:
-    st.info("👈 กรุณากรอกรหัสประจำตัวที่แถบด้านข้าง เพื่อเริ่มใช้งานระบบวิเคราะห์ค่ะ")
+    st.info("👈 กรุณากรอกรหัสประจำตัวในแถบด้านซ้าย")
