@@ -11,6 +11,10 @@ with st.form("user_data"):
     weight = st.number_input("น้ำหนัก (kg)", 0.0)
     height = st.number_input("ส่วนสูง (cm)", 0.0)
     hospital = st.selectbox("เลือกโรงพยาบาล", ["รพ.พระนารายณ์", "รพ.พัฒนานิคม"])
+    
+    # เพิ่มส่วนอัปโหลดภาพที่นี่
+    uploaded_file = st.file_uploader("3. อัปโหลดภาพถ่ายเข่า (ตาม Workflow)", type=["jpg", "png"])
+    
     submitted = st.form_submit_button("คำนวณและประเมินผล")
 
 if submitted:
@@ -19,13 +23,16 @@ if submitted:
     st.subheader("2. ผล BMI")
     st.write(f"ค่า BMI ของคุณคือ: {bmi:.2f}")
 
-    # 3-5. จำลองกระบวนการ AI และคณิตศาสตร์
+    # 3-5. วิเคราะห์ภาพ
     st.header("3-5. วิเคราะห์ด้วย AI และคณิตศาสตร์")
-    st.info("กำลังประมวลผล Computer Vision และจุดข้อต่อ...")
-    
-    # จำลององศาเข่า (ถ้าเป็นของจริงจะใช้จุดพิกัดจากรูป)
-    angle = 165 # สมมติค่า
-    st.write(f"มุมความเบี่ยงเบนของขา: {angle}°")
+    if uploaded_file is not None:
+        st.image(uploaded_file, caption="ภาพที่อัปโหลด", use_container_width=True)
+        st.info("กำลังประมวลผล Computer Vision และคำนวณมุมความเบี่ยงเบน...")
+        angle = 165 # ค่าจำลองการคำนวณ
+        st.write(f"มุมความเบี่ยงเบนของขา: {angle}°")
+    else:
+        st.warning("กรุณาอัปโหลดภาพก่อนประเมินผลค่ะ")
+        angle = 180
 
     # 6. ประเมินผล
     st.header("6. ประเมินผลและส่งต่อ")
@@ -34,7 +41,3 @@ if submitted:
         st.write(f"ระบบส่งข้อมูลของคุณไปยัง {hospital} เรียบร้อยแล้ว")
     else:
         st.success("✅ เข่าอยู่ในเกณฑ์ปกติ")
-
-    # บันทึกประวัติ
-    data = {"ชื่อ": [name], "BMI": [bmi], "มุมเข่า": [angle]}
-    st.table(pd.DataFrame(data))
