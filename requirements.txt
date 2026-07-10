@@ -1,5 +1,6 @@
 streamlit
 pandas
 numpy
-imageio
 mediapipe
+opencv-python-headless
+imageio
