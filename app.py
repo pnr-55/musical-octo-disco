@@ -1,10 +1,18 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import cv2
+import cv2 
 import mediapipe as mp
 import datetime
 import os
+
+# ตั้งค่า MediaPipe
+mp_pose = mp.solutions.pose
+pose = mp_pose.Pose(static_image_mode=True, min_detection_confidence=0.5)
+
+st.set_page_config(page_title="Knee AI - Professional", layout="wide")
+st.title("🤖 Knee AI: ระบบวิเคราะห์เข่าอัตโนมัติ")
+
 # ฟังก์ชันคำนวณมุม
 def calculate_angle(a, b, c):
     a = np.array(a); b = np.array(b); c = np.array(c)
@@ -15,32 +23,32 @@ def calculate_angle(a, b, c):
 
 # จัดการข้อมูล
 DB_FILE = "patient_data.csv"
-if os.path.exists(DB_FILE): df = pd.read_csv(DB_FILE)
-else: df = pd.DataFrame(columns=["id", "date", "angle"])
+if os.path.exists(DB_FILE): 
+    df = pd.read_csv(DB_FILE)
+else: 
+    df = pd.DataFrame(columns=["id", "date", "angle"])
 
-# 🔑 Sidebar
+# ส่วนการทำงานหลัก
 uid = st.sidebar.text_input("🔑 รหัสประจำตัวคนไข้ (4 หลัก):")
 
 if uid:
-    st.sidebar.success(f"ผู้ใช้งาน: {uid}")
-    
-    # 📷 ส่วนการอัปโหลดและวิเคราะห์
     st.header("📸 วิเคราะห์องศาเข่าด้วย AI")
     uploaded_file = st.file_uploader("อัปโหลดรูปขา (เห็นสะโพก-เข่า-ข้อเท้า):", type=["jpg", "png"])
     
     if uploaded_file:
         file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
         image = cv2.imdecode(file_bytes, 1)
-        results = pose.process(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+        image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        results = pose.process(image_rgb)
         
         if results.pose_landmarks:
             lms = results.pose_landmarks.landmark
-            hip = [lms[mp_pose.PoseLandmark.LEFT_HIP.value].x, lms[mp_pose.PoseLandmark.LEFT_HIP.value].y]
-            knee = [lms[mp_pose.PoseLandmark.LEFT_KNEE.value].x, lms[mp_pose.PoseLandmark.LEFT_KNEE.value].y]
-            ankle = [lms[mp_pose.PoseLandmark.LEFT_ANKLE.value].x, lms[mp_pose.PoseLandmark.LEFT_ANKLE.value].y]
+            hip = [lms[23].x, lms[23].y]
+            knee = [lms[25].x, lms[25].y]
+            ankle = [lms[27].x, lms[27].y]
             
             angle = calculate_angle(hip, knee, ankle)
-            st.image(image, caption="รูปที่ AI วิเคราะห์", use_container_width=True)
+            st.image(image_rgb, caption="AI วิเคราะห์จุดข้อต่อเรียบร้อย", use_container_width=True)
             st.metric("องศาที่วิเคราะห์ได้", f"{round(angle, 2)}°")
             
             if st.button("บันทึกผลการวิเคราะห์"):
@@ -49,12 +57,11 @@ if uid:
                 df.to_csv(DB_FILE, index=False)
                 st.success("บันทึกข้อมูลเรียบร้อย!")
         else:
-            st.error("AI หาข้อต่อไม่เจอค่ะ! ลองถ่ายรูปให้เห็นตัวเต็มตั้งแต่สะโพกถึงข้อเท้านะคะ")
+            st.error("AI หาข้อต่อไม่เจอ! กรุณาถ่ายรูปให้เห็นเต็มตัวตั้งแต่สะโพกถึงข้อเท้านะคะ")
 
-    # 📈 ประวัติ
-    st.header("📈 ประวัติพัฒนาการ")
+    st.header("📈 ประวัติการวิเคราะห์")
     user_hist = df[df['id'] == uid]
     if not user_hist.empty:
         st.line_chart(user_hist.set_index('date')['angle'])
 else:
-    st.info("👈 กรุณากรอกรหัสประจำตัวในแถบด้านซ้าย")
+    st.info("👈 กรุณากรอกรหัสประจำตัวที่แถบด้านซ้ายเพื่อเริ่มระบบค่ะ")
