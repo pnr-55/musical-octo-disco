@@ -25,7 +25,7 @@ if submitted:
     st.header("3-5. ผลการวิเคราะห์")
     if uploaded_file is not None:
         st.image(uploaded_file, caption="ภาพของคุณ", use_container_width=True)
-        angle = 165 # จำลองค่าการคำนวณ
+        angle = คำนวนจากภาพ # จำลองค่าการคำนวณ
         st.write(f"มุมความเบี่ยงเบนของขา: {angle}°")
         
         # 6. ประเมินผลและแนะนำ
