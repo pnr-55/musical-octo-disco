@@ -1,11 +1,7 @@
-import streamlit as st
-import pandas as pd
-import numpy as np
-import cv2
-import mediapipe as mp
-import datetime
-import os
-
+import sys
+try: import cv2
+except ImportError:
+    st.error("ระบบกำลังติดตั้ง Library กรุณารอ 1 นาทีแล้วรีเฟรช")
 # ตั้งค่า MediaPipe
 mp_pose = mp.solutions.pose
 pose = mp_pose.Pose()
