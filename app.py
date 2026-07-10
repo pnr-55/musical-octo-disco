@@ -1,45 +1,51 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
 import datetime
 import os
 
-st.set_page_config(page_title="Knee AI - Patient Record", layout="wide")
-st.title("🩺 Knee AI: ระบบติดตามและสรุปผลคนไข้")
+st.set_page_config(page_title="Knee AI - Personal Data", layout="wide")
+st.title("🩺 Knee AI: ระบบเก็บข้อมูลคนไข้")
 
-DB_FILE = "patient_data.csv"
-if os.path.exists(DB_FILE): df = pd.read_csv(DB_FILE)
-else: df = pd.DataFrame(columns=["id", "date", "angle"])
+# ไฟล์เก็บข้อมูล 2 ส่วน
+USER_FILE = "user_profiles.csv" # เก็บ ชื่อ อายุ จังหวัด
+HISTORY_FILE = "knee_history.csv" # เก็บ ประวัติการวัดค่าเข่า
 
-uid = st.sidebar.text_input("🔑 กรอกรหัสประจำตัวคนไข้:")
+# ฟังก์ชันโหลดไฟล์
+def load_data(file, columns):
+    if os.path.exists(file): return pd.read_csv(file)
+    return pd.DataFrame(columns=columns)
+
+user_df = load_data(USER_FILE, ["id", "name", "age", "province"])
+hist_df = load_data(HISTORY_FILE, ["id", "date", "angle"])
+
+# ส่วนการเข้าใช้งาน
+uid = st.sidebar.text_input("🔑 กรอกรหัสประจำตัว (UID):")
 
 if uid:
-    st.subheader(f"ประวัติการรักษาของ: {uid}")
+    # ตรวจสอบว่าเคยลงทะเบียนหรือยัง
+    user_info = user_df[user_df['id'] == uid]
     
-    # ส่วนกรอกข้อมูลใหม่
-    new_angle = st.number_input("กรอกองศาที่วัดได้ล่าสุด (°):", min_value=0.0, max_value=180.0)
-    if st.button("บันทึกข้อมูลและดูผลสรุป"):
-        new_data = pd.DataFrame([{"id": uid, "date": str(datetime.date.today()), "angle": new_angle}])
-        df = pd.concat([df, new_data], ignore_index=True)
-        df.to_csv(DB_FILE, index=False)
-        st.success("บันทึกข้อมูลเรียบร้อย!")
-
-    # สรุปผลจากข้อมูล
-    user_hist = df[df['id'] == uid]
-    if len(user_hist) >= 2:
-        last = user_hist.iloc[-1]['angle']
-        prev = user_hist.iloc[-2]['angle']
-        diff = prev - last
+    if user_info.empty:
+        st.subheader("📝 ลงทะเบียนครั้งแรก")
+        with st.form("register_form"):
+            name = st.text_input("ชื่อ-นามสกุล")
+            age = st.number_input("อายุ", min_value=1, max_value=100)
+            province = st.text_input("จังหวัด")
+            submitted = st.form_submit_button("ลงทะเบียน")
+            if submitted:
+                new_user = pd.DataFrame([{"id": uid, "name": name, "age": age, "province": province}])
+                user_df = pd.concat([user_df, new_user], ignore_index=True)
+                user_df.to_csv(USER_FILE, index=False)
+                st.success("ลงทะเบียนสำเร็จ! กรุณารีเฟรชหน้าจอ")
+    else:
+        # ถ้าเคยลงทะเบียนแล้ว ดึงข้อมูลเก่ามาโชว์
+        info = user_info.iloc[0]
+        st.write(f"### สวัสดีคุณ {info['name']}")
+        st.write(f"อายุ: {info['age']} ปี | จังหวัด: {info['province']}")
         
         st.write("---")
-        st.subheader("📊 สรุปพัฒนาการ")
-        if diff > 0:
-            st.success(f"ดีขึ้นค่ะ! มุมเปลี่ยนไปในทางที่ดีขึ้น {abs(diff):.2f}°")
-        else:
-            st.warning(f"ต้องระวังนะคะ มุมเปลี่ยนไป {abs(diff):.2f}° จากครั้งก่อน")
-        
-        st.line_chart(user_hist.set_index('date')['angle'])
-    else:
-        st.info("กรอกข้อมูลอย่างน้อย 2 ครั้ง เพื่อให้ระบบสรุปผลนะคะ")
+        st.subheader("📸 อัปโหลดรูปภาพเพื่อประเมินเข่า")
+        # ตรงนี้ปายสามารถใส่ฟังก์ชันอัปโหลดรูปและคำนวณได้เลย
+        st.info("ระบบพร้อมประเมินเบื้องต้นแล้ว (คำเตือน: เป็นการประเมินเบื้องต้นเท่านั้น)")
 else:
-    st.info("👈 กรุณากรอกรหัสประจำตัวในแถบด้านซ้าย")
+    st.info("👈 กรุณากรอกรหัสประจำตัวในแถบด้านซ้ายเพื่อเริ่มระบบ")
